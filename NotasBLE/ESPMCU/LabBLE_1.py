@@ -8,7 +8,7 @@ from BLE import BLEUART
 import bluetooth
 
 #Globals
-PinLed = Pin(32, Pin.OUT, value = 0) #On GPIO
+PinLed = Pin(2, Pin.OUT, value = 0) #On GPIO
 
 #Init config
 machine.freq(240000000) # set the CPU frequency to 240 MHz
@@ -26,9 +26,11 @@ def on_rx():
     print("ESP32 " + str(rx_buffer) + "\n")
     if rx_buffer == "ON":
         PinLed.on()
-    else if rx_buffer == "OFF":
+        print("Led on")
+    elif rx_buffer == "OFF":
         PinLed.off()
-    else
+        print("Led off")
+    else:
         print("String not handled")
 
 #Register BLE event
