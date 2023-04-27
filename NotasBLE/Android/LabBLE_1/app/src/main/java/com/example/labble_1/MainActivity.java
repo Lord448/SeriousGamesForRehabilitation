@@ -25,6 +25,7 @@ import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
@@ -32,6 +33,7 @@ import java.util.UUID;
 @RequiresApi(api = Build.VERSION_CODES.S)
 public class MainActivity extends AppCompatActivity implements View.OnClickListener{
 
+    private static final String TAG = "MainActivity";
     private static final int REQUEST_ENABLE_BT = 1;
     private static final int REQUEST_ENABLE_ADMIN_BT = 2;
     private static final int REQUEST_SCAN_BT = 3;
@@ -40,13 +42,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private static final UUID txChUUID = UUID.fromString("6E400003-B5A3-F393-E0A9-E50E24DCCA9E");
     private static final UUID rxChUUID = UUID.fromString("6E400002-B5A3-F393-E0A9-E50E24DCCA9E");
     private final BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+    private static BluetoothGattCharacteristic characteristic;
+    private static BluetoothGattService service;
+    MyGattCallback gattCallback;
+    private static byte[] dataBuffer;
     private Button btnON_OFF;
     private TextView txtStatus;
     private boolean esp32IsConnected = false;
     private boolean esp32IsPaired = false;
     private String deviceMacAddress;
-
-    //Experimental
     private BluetoothDevice mDevice;
     private BluetoothGatt mGatt;
 
@@ -97,26 +101,38 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
         if(deviceMacAddress != null) {
             mDevice = BluetoothAdapter.getDefaultAdapter().getRemoteDevice(deviceMacAddress);
-            BluetoothGattCharacteristic characteristic = new BluetoothGattCharacteristic(
+            characteristic = new BluetoothGattCharacteristic(
                     rxChUUID,
                     BluetoothGattCharacteristic.PROPERTY_WRITE,
                     BluetoothGattCharacteristic.PERMISSION_WRITE);
-            byte[] dataBuffer = "ON".getBytes();
+            dataBuffer = "TRY".getBytes();
 
-            MyGattCallback gattCallback = new MyGattCallback(characteristic, dataBuffer);
+            gattCallback = new MyGattCallback(characteristic, dataBuffer);
 
             mGatt = mDevice.connectGatt(this, false, gattCallback);
+
+
         }
         else {
             Log.d("Gatt Connection", "Device MAC Address given is null");
         }
+        btnON_OFF.setOnClickListener(this::onClick);
     }
 
+    @SuppressLint({"MissingPermission", "SetTextI18n"})
     @Override
     public void onClick(View view) {
         switch (view.getId()) {
             case R.id.btnON_OFF:
-
+                if(btnON_OFF.getText().toString().equals("ON")) {
+                    gattCallback.sendData("ON".getBytes(), mGatt);
+                    btnON_OFF.setText("OFF");
+                }
+                else if(btnON_OFF.getText().toString().equals("OFF")) {
+                    gattCallback.sendData("OFF".getBytes(), mGatt);
+                    btnON_OFF.setText("ON");
+                }
+                else
             break;
         }
     }

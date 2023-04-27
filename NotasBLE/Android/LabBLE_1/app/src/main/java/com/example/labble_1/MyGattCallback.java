@@ -13,6 +13,7 @@ import androidx.core.app.ActivityCompat;
 
 import java.util.UUID;
 
+@SuppressLint("MissingPermission")
 public class MyGattCallback extends BluetoothGattCallback {
     private static final String TAG = "GattCallback";
     private BluetoothGattCharacteristic mCharacteristic;
@@ -24,7 +25,6 @@ public class MyGattCallback extends BluetoothGattCallback {
         mDataBuffer = dataBuffer;
     }
 
-    @SuppressLint("MissingPermission")
     @Override
     public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
         super.onConnectionStateChange(gatt, status, newState);
@@ -37,33 +37,24 @@ public class MyGattCallback extends BluetoothGattCallback {
         }
     }
 
-    @SuppressLint("MissingPermission")
     @Override
     public void onServicesDiscovered(BluetoothGatt gatt, int status) {
         super.onServicesDiscovered(gatt, status);
         if (status == BluetoothGatt.GATT_SUCCESS) {
             Log.i(TAG, "Services discovered successfully.");
-            int i = 0;
             for(BluetoothGattService service : gatt.getServices()) {
                 Log.i(TAG, "For service: " + service.getUuid().toString());
-                i++;
-                if (service != null) {
-                    BluetoothGattCharacteristic characteristic = service.getCharacteristic(mCharacteristic.getUuid());
-                    if (characteristic != null) {
-                        Log.i(TAG, "Trying characteristic: " + characteristic.getUuid().toString());
-                        mCharacteristic = characteristic;
-                        mCharacteristic.setValue(mDataBuffer);
-                        gatt.writeCharacteristic(mCharacteristic);
-                    } else {
-                        Log.i(TAG, "Failed to get characteristic.");
-                    }
+                BluetoothGattCharacteristic characteristic = service.getCharacteristic(mCharacteristic.getUuid());
+                if (characteristic != null) {
+                    Log.i(TAG, "Trying characteristic: " + characteristic.getUuid().toString());
+                    mCharacteristic = characteristic;
+                    mCharacteristic.setValue(mDataBuffer);
+                    gatt.writeCharacteristic(mCharacteristic);
                 }
                 else {
-                    Log.i(TAG, "Failed to get service " + i);
+                    Log.i(TAG, "Failed to get characteristic.");
                 }
             }
-
-
         }
         else {
             Log.i(TAG, "Failed to discover services: " + status);
@@ -99,5 +90,18 @@ public class MyGattCallback extends BluetoothGattCallback {
         Log.i(TAG, "Characteristic changed.");
         byte[] value = characteristic.getValue();
         // Process the incoming characteristic value
+    }
+
+    public void sendData(byte[] mDataBuffer, BluetoothGatt mGatt) {
+        if(mCharacteristic != null) {
+            mCharacteristic.setValue(mDataBuffer);
+            boolean success = mGatt.writeCharacteristic(mCharacteristic);
+            if(success)
+                Log.i(TAG, "Data send successfully");
+            else
+                Log.i(TAG, "Failed to send data");
+        }
+        else
+            Log.i(TAG, "Characteristic is null");
     }
 }

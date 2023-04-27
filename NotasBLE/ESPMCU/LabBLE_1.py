@@ -19,17 +19,25 @@ name = 'LabBLE_1'
 ble = bluetooth.BLE()
 uart = BLEUART(ble, name)
 
+def ledOFF():
+    PinLed.off()
+    
+def ledON():
+    PinLed.on()
+    
 #Bluetooth Rx event callback
 def on_rx():
     rx_buffer = uart.read().decode().strip()
     uart.write("ESP32 " + str(rx_buffer) + "\n")
-    print("ESP32 " + str(rx_buffer) + "\n")
+    print("Sending: ESP32 " + str(rx_buffer) + "\n")
     if rx_buffer == "ON":
         PinLed.on()
         print("Led on")
     elif rx_buffer == "OFF":
         PinLed.off()
         print("Led off")
+    elif rx_buffer == "TRY":
+        print("Message Recieved")
     else:
         print("String not handled")
 
