@@ -273,3 +273,4 @@ public class MyGattCallback extends BluetoothGattCallback {
         gatt.writeDescriptor(mDescriptor);
     }
 }
+
