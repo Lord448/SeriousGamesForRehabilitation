@@ -16,7 +16,7 @@ import android.util.Log;
  */
 @SuppressLint("MissingPermission")
 public class MyGattCallback extends BluetoothGattCallback {
-    private static final String TAG = "GattCallback"; //<
+    private static final String TAG = "GattCallback";
     private BluetoothGattCharacteristic mCharacteristic;
     private BluetoothGattDescriptor mDescriptor;
     private OnCharacteristicChangedListener mOnCharacteristicChangedListener;
@@ -204,17 +204,23 @@ public class MyGattCallback extends BluetoothGattCallback {
      * @param mDataBuffer byte array that contains the data that will be sent to the gatt server
      * @param mGatt gatt class instance
      */
-    public void sendData(byte[] mDataBuffer, BluetoothGatt mGatt) {
+    public boolean sendData(byte[] mDataBuffer, BluetoothGatt mGatt) {
         if(mCharacteristic != null) {
             mCharacteristic.setValue(mDataBuffer);
             boolean success = mGatt.writeCharacteristic(mCharacteristic);
-            if(success)
+            if(success) {
                 Log.i(TAG, "Data send successfully");
-            else
+                return true;
+            }
+            else {
                 Log.i(TAG, "Failed to send data");
+                return false;
+            }
         }
-        else
+        else {
             Log.i(TAG, "Characteristic is null");
+            return false;
+        }
     }
 
     /**
@@ -247,7 +253,7 @@ public class MyGattCallback extends BluetoothGattCallback {
      *        contained in the mCharacteristic and mDescriptor attributes
      * @param gatt gatt class instance
      */
-    public void enableNotifications(BluetoothGatt gatt) {
+    private void enableNotifications(BluetoothGatt gatt) {
         if (gatt == null) {
             Log.e(TAG, "Gatt object is null");
             return;

@@ -54,7 +54,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private static final String[] btPermissions = {
             Manifest.permission.BLUETOOTH_CONNECT,
             Manifest.permission.BLUETOOTH_ADMIN,
-            Manifest.permission.BLUETOOTH_SCAN};
+            Manifest.permission.BLUETOOTH_SCAN
+    };
 
     private static final String[] PERMISSIONS_STORAGE = {
             Manifest.permission.ACCESS_FINE_LOCATION,
@@ -63,6 +64,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             Manifest.permission.BLUETOOTH_CONNECT,
             Manifest.permission.BLUETOOTH_PRIVILEGED
     };
+
     private static final String[] PERMISSIONS_LOCATION = {
             Manifest.permission.ACCESS_FINE_LOCATION,
             Manifest.permission.ACCESS_COARSE_LOCATION,
