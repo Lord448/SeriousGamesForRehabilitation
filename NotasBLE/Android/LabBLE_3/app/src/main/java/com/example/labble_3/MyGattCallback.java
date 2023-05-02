@@ -1,3 +1,5 @@
+package com.example.labble_3;
+
 import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
@@ -277,4 +279,3 @@ public class MyGattCallback extends BluetoothGattCallback {
         gatt.writeDescriptor(mDescriptor);
     }
 }
-
