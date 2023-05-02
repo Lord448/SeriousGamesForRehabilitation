@@ -1,5 +1,4 @@
 import android.Manifest;
-import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -18,10 +17,11 @@ import java.util.Objects;
 import java.util.Set;
 
 @RequiresApi(api = Build.VERSION_CODES.S)
-@SuppressLint("MissingPermission")
 public class RojoBLE {
     public static final int ROJO_TYPE_WRITE = 1;
     public static final int ROJO_TYPE_NOTIFY = 2;
+    private static final int REQUEST_ENABLE_BT = 1;
+    private static final int REQUEST_ENABLE_ADMIN_BT = 2;
     private static final String TAG = "RojoBLE";
     private final int typeCharacteristic;
     private final Context context;
@@ -36,6 +36,12 @@ public class RojoBLE {
     private String strDataReceived;
     private byte[] mDataBuffer;
     private byte[] mDataReceived;
+
+    private static final String[] btPermissions = {
+            Manifest.permission.BLUETOOTH_CONNECT,
+            Manifest.permission.BLUETOOTH_ADMIN,
+            Manifest.permission.BLUETOOTH_SCAN
+    };
 
     private static final String[] PERMISSIONS_STORAGE = {
             Manifest.permission.ACCESS_FINE_LOCATION,
@@ -56,17 +62,21 @@ public class RojoBLE {
         mCharacteristic = characteristic;
         this.typeCharacteristic = typeCharacteristic;
         this.context = context;
-        if(context == null) {
+        if (context == null) {
             Log.e(TAG, "Context is null");
             Log.e(TAG, "Class not constructed");
             return;
         }
         mDevice = BluetoothAdapter.getDefaultAdapter().getRemoteDevice(deviceMacAddress);
-        if(this.typeCharacteristic == ROJO_TYPE_WRITE)
+        if (this.typeCharacteristic == ROJO_TYPE_WRITE)
             GattCallback = new MyGattCallback(mCharacteristic, "TRY".getBytes());
         else if (this.typeCharacteristic == ROJO_TYPE_NOTIFY) {
             GattCallback = new MyGattCallback(mCharacteristic, null);
             GattCallback.setOnCharacteristicChangedListener(this::onCharacteristicNotificationListener);
+        }
+        if (ActivityCompat.checkSelfPermission(context, android.Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions((Activity) context, btPermissions, REQUEST_ENABLE_BT);
+            ActivityCompat.requestPermissions((Activity) context, btPermissions, REQUEST_ENABLE_ADMIN_BT);
         }
         mGatt = mDevice.connectGatt(this.context, false, GattCallback);
     }
@@ -75,19 +85,25 @@ public class RojoBLE {
         mCharacteristic = characteristic;
         this.typeCharacteristic = typeCharacteristic;
         this.context = context;
-        if(context == null) {
+        if (context == null) {
             Log.e(TAG, "Context is null");
             Log.e(TAG, "Class not constructed");
             return;
         }
-        if(mDeviceMacAddress == null) {
+        if (mDeviceMacAddress == null) {
             mDeviceMacAddress = searchForMacAddress(this.context, adapter, deviceName);
         }
         mDevice = BluetoothAdapter.getDefaultAdapter().getRemoteDevice(mDeviceMacAddress);
-        if(this.typeCharacteristic == ROJO_TYPE_WRITE)
+        if (this.typeCharacteristic == ROJO_TYPE_WRITE)
             GattCallback = new MyGattCallback(mCharacteristic, "TRY".getBytes());
-        else if (this.typeCharacteristic == ROJO_TYPE_NOTIFY)
+        else if (this.typeCharacteristic == ROJO_TYPE_NOTIFY) {
             GattCallback = new MyGattCallback(mCharacteristic, null);
+            GattCallback.setOnCharacteristicChangedListener(this::onCharacteristicNotificationListener);
+        }
+        if (ActivityCompat.checkSelfPermission(context, android.Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions((Activity) context, btPermissions, REQUEST_ENABLE_BT);
+            ActivityCompat.requestPermissions((Activity) context, btPermissions, REQUEST_ENABLE_ADMIN_BT);
+        }
         mGatt = mDevice.connectGatt(this.context, false, GattCallback);
     }
 
@@ -142,3 +158,4 @@ public class RojoBLE {
         setNotificationsListener = listener;
     }
 }
+

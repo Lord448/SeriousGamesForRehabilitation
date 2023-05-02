@@ -1,6 +1,7 @@
-package com.example.labble_1;
+package com.example.labble_2;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -9,16 +10,16 @@ import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
 import android.content.Context;
 import android.content.pm.PackageManager;
-import android.os.Build;
 import android.util.Log;
 
-import androidx.annotation.RequiresApi;
 import androidx.core.app.ActivityCompat;
 
 import java.util.Objects;
 import java.util.Set;
+import java.util.UUID;
 
-@RequiresApi(api = Build.VERSION_CODES.S)
+//@RequiresApi(api = Build.VERSION_CODES.S)
+@SuppressLint("InlinedApi")
 public class RojoBLE {
     public static final int ROJO_TYPE_WRITE = 1;
     public static final int ROJO_TYPE_NOTIFY = 2;
@@ -27,7 +28,7 @@ public class RojoBLE {
     private static final String TAG = "RojoBLE";
     private final int typeCharacteristic;
     private final Context context;
-    private final BluetoothGattCharacteristic mCharacteristic;
+    private BluetoothGattCharacteristic mCharacteristic;
     private SetNotificationsListener setNotificationsListener;
     private BluetoothGatt mGatt;
     private BluetoothDevice mDevice;
@@ -52,6 +53,7 @@ public class RojoBLE {
             Manifest.permission.BLUETOOTH_CONNECT,
             Manifest.permission.BLUETOOTH_PRIVILEGED
     };
+
     private static final String[] PERMISSIONS_LOCATION = {
             Manifest.permission.ACCESS_FINE_LOCATION,
             Manifest.permission.ACCESS_COARSE_LOCATION,
@@ -60,8 +62,47 @@ public class RojoBLE {
             Manifest.permission.BLUETOOTH_PRIVILEGED
     };
 
-    public RojoBLE(Context context, BluetoothGattCharacteristic characteristic, int typeCharacteristic, String deviceMacAddress) {
-        mCharacteristic = characteristic;
+    public RojoBLE(Context context, UUID characteristicUUID, int typeCharacteristic, String deviceMacAddress) {
+        this.typeCharacteristic = typeCharacteristic;
+        this.context = context;
+        this.mDeviceMacAddress = deviceMacAddress;
+        if (context == null) {
+            Log.e(TAG, "Context is null");
+            Log.e(TAG, "Class not constructed");
+            return;
+        }
+        if(this.typeCharacteristic == ROJO_TYPE_WRITE) {
+            mCharacteristic = new BluetoothGattCharacteristic(
+                    characteristicUUID,
+                    BluetoothGattCharacteristic.PROPERTY_WRITE,
+                    BluetoothGattCharacteristic.PERMISSION_WRITE);
+            GattCallback = new MyGattCallback(mCharacteristic, "TRY".getBytes());
+            Log.i(TAG, "Write characteristic created");
+        }
+        else if(this.typeCharacteristic == ROJO_TYPE_NOTIFY) {
+            mCharacteristic = new BluetoothGattCharacteristic(
+                    characteristicUUID,
+                    BluetoothGattCharacteristic.PROPERTY_NOTIFY,
+                    BluetoothGattCharacteristic.PERMISSION_WRITE);
+            GattCallback = new MyGattCallback(mCharacteristic, null);
+            GattCallback.setOnCharacteristicChangedListener(this::onCharacteristicNotificationListener);
+            Log.i(TAG, "Notify characteristic created");
+        }
+        else {
+            Log.i(TAG, "Could not create the characteristic");
+            mCharacteristic = null;
+            return;
+        }
+        mDevice = BluetoothAdapter.getDefaultAdapter().getRemoteDevice(this.mDeviceMacAddress);
+        if (ActivityCompat.checkSelfPermission(context, android.Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions((Activity) context, btPermissions, REQUEST_ENABLE_BT);
+            ActivityCompat.requestPermissions((Activity) context, btPermissions, REQUEST_ENABLE_ADMIN_BT);
+        }
+        mGatt = mDevice.connectGatt(this.context, false, GattCallback);
+        Log.i(TAG, "Finished construct");
+    }
+
+    public RojoBLE(Context context, UUID characteristicUUID, int typeCharacteristic, BluetoothAdapter adapter, String deviceName) {
         this.typeCharacteristic = typeCharacteristic;
         this.context = context;
         if (context == null) {
@@ -69,39 +110,31 @@ public class RojoBLE {
             Log.e(TAG, "Class not constructed");
             return;
         }
-        mDevice = BluetoothAdapter.getDefaultAdapter().getRemoteDevice(deviceMacAddress);
-        if (this.typeCharacteristic == ROJO_TYPE_WRITE)
+        if(this.typeCharacteristic == ROJO_TYPE_WRITE) {
+            mCharacteristic = new BluetoothGattCharacteristic(
+                    characteristicUUID,
+                    BluetoothGattCharacteristic.PROPERTY_WRITE,
+                    BluetoothGattCharacteristic.PERMISSION_WRITE);
             GattCallback = new MyGattCallback(mCharacteristic, "TRY".getBytes());
-        else if (this.typeCharacteristic == ROJO_TYPE_NOTIFY) {
+            Log.i(TAG, "Write characteristic created");
+        }
+        else if(this.typeCharacteristic == ROJO_TYPE_NOTIFY) {
+            mCharacteristic = new BluetoothGattCharacteristic(
+                    characteristicUUID,
+                    BluetoothGattCharacteristic.PROPERTY_NOTIFY,
+                    BluetoothGattCharacteristic.PERMISSION_WRITE);
             GattCallback = new MyGattCallback(mCharacteristic, null);
             GattCallback.setOnCharacteristicChangedListener(this::onCharacteristicNotificationListener);
+            Log.i(TAG, "Notify characteristic created");
         }
-        if (ActivityCompat.checkSelfPermission(context, android.Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions((Activity) context, btPermissions, REQUEST_ENABLE_BT);
-            ActivityCompat.requestPermissions((Activity) context, btPermissions, REQUEST_ENABLE_ADMIN_BT);
-        }
-        mGatt = mDevice.connectGatt(this.context, false, GattCallback);
-    }
-
-    public RojoBLE(Context context, BluetoothGattCharacteristic characteristic, int typeCharacteristic, BluetoothAdapter adapter, String deviceName) {
-        mCharacteristic = characteristic;
-        this.typeCharacteristic = typeCharacteristic;
-        this.context = context;
-        if (context == null) {
-            Log.e(TAG, "Context is null");
-            Log.e(TAG, "Class not constructed");
+        else {
+            Log.i(TAG, "Could not create the characteristic");
             return;
         }
         if (mDeviceMacAddress == null) {
             mDeviceMacAddress = searchForMacAddress(this.context, adapter, deviceName);
         }
         mDevice = BluetoothAdapter.getDefaultAdapter().getRemoteDevice(mDeviceMacAddress);
-        if (this.typeCharacteristic == ROJO_TYPE_WRITE)
-            GattCallback = new MyGattCallback(mCharacteristic, "TRY".getBytes());
-        else if (this.typeCharacteristic == ROJO_TYPE_NOTIFY) {
-            GattCallback = new MyGattCallback(mCharacteristic, null);
-            GattCallback.setOnCharacteristicChangedListener(this::onCharacteristicNotificationListener);
-        }
         if (ActivityCompat.checkSelfPermission(context, android.Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions((Activity) context, btPermissions, REQUEST_ENABLE_BT);
             ActivityCompat.requestPermissions((Activity) context, btPermissions, REQUEST_ENABLE_ADMIN_BT);
@@ -109,8 +142,20 @@ public class RojoBLE {
         mGatt = mDevice.connectGatt(this.context, false, GattCallback);
     }
 
-    public MyGattCallback getGattCallback() {
-        return GattCallback;
+    public static boolean checkBLESupport(Context context, BluetoothAdapter bluetoothAdapter) {
+        if(bluetoothAdapter != null) {
+            if(!bluetoothAdapter.isEnabled()) {
+                if(ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED) {
+                    ActivityCompat.requestPermissions((Activity) context, btPermissions, REQUEST_ENABLE_BT);
+                    ActivityCompat.requestPermissions((Activity) context, btPermissions, REQUEST_ENABLE_ADMIN_BT);
+                }
+            }
+        }
+        else {
+            Log.e(TAG, "Bluetooth Adapter is null");
+            return false;
+        }
+        return true;
     }
 
     public static String searchForMacAddress(Context context, BluetoothAdapter bluetoothAdapter, String deviceName) {
@@ -137,11 +182,14 @@ public class RojoBLE {
         return null;
     }
 
-    public boolean sendData(byte[] dataBuffer) {
-        if(GattCallback.sendData(dataBuffer, mGatt)) {
+    public boolean sendData(String dataBuffer) {
+        mDataBuffer = dataBuffer.getBytes();
+        if(GattCallback.sendData(mDataBuffer, mGatt)) {
+            Log.i(TAG, "Data send successfully");
             return true;
         }
         else {
+            Log.i(TAG, "Data could not be sent");
             return false;
         }
     }
@@ -158,5 +206,9 @@ public class RojoBLE {
 
     public void setOnCharacteristicNotificationListener(SetNotificationsListener listener) {
         setNotificationsListener = listener;
+    }
+
+    public MyGattCallback getGattCallback() {
+        return GattCallback;
     }
 }

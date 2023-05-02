@@ -39,7 +39,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private final BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
     private static BluetoothGattCharacteristic characteristicTX;
     private static BluetoothGattCharacteristic characteristicRX;
-    private static BluetoothGattService service;
     private static MyGattCallback gattCallbackTXChar;
     private static MyGattCallback gattCallbackRXChar;
     private Button btnON_OFF;
