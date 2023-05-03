@@ -30,6 +30,6 @@ uart.irq(handler=on_rx)
 while 1:
     sensorTemp = esp32.raw_temperature()
     sensorTemp = (sensorTemp - 32) * (5/9)
-    uart.write("{:.2f}".format(sensorTemp) + "\n")
-    print("{:.2f}".format(sensorTemp) + " Celsius")
+    uart.write("{:.2f}".format(sensorTemp))
+    print("{:.2f}".format(sensorTemp))
     time.sleep(0.2)

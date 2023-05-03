@@ -31,6 +31,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private Button btnON_OFF;
     private TextView txtStatus;
     private TextView txtSwicth;
+    private Switch swStatus;
     private String strValue;
     private boolean swChecked = false;
 
@@ -42,6 +43,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         btnON_OFF = (Button) findViewById(R.id.btnON_OFF);
         txtStatus = (TextView) findViewById(R.id.txtStatus);
         txtSwicth = (TextView) findViewById(R.id.txtSwitch);
+        swStatus = (Switch) findViewById(R.id.swStatus);
 
         if(!RojoBLE.checkBLESupport(this, bluetoothAdapter)) {
             Toast.makeText(getApplicationContext(), "Your device doesn't support bluetooth", Toast.LENGTH_LONG).show();
@@ -82,16 +84,28 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         Log.i(TAG, "Received: " + strValue);
         if(strValue.toLowerCase().trim().equals("SW ON".toLowerCase().trim())) {
             swChecked = true;
-            txtSwicth.setText("Switch ON");
+            //txtSwicth.setText("Switch ON");
             Log.i(TAG, "Entered ON");
         }
         else if(strValue.toLowerCase().trim().equals("SW OFF".toLowerCase().trim())) {
             swChecked = false;
-            txtSwicth.setText("Switch OFF");
+            //txtSwicth.setText("Switch OFF");
             Log.i(TAG, "Entered OFF");
         }
         else {
             Log.i(TAG, "Not Handled");
         }
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                if(swChecked) {
+                    txtSwicth.setText("Switch ON");
+                }
+                else {
+                    txtSwicth.setText("Switch OFF");
+                }
+                swStatus.setChecked(swChecked);
+            }
+        });
     }
 }

@@ -34,9 +34,11 @@ for i in range(0, 3):
 def on_rx():
     rx_buffer = uart.read().decode().strip()
     print("Data received: " + str(rx_buffer) + "\n")
-    gattClientOrders = rx_buffer.split()
-    for i in range(0, 3):
-        strArr[i] = "".join(gattClientOrders[i])
+    if rx_buffer != "TRY":    
+        gattClientOrders = rx_buffer.split()
+        for i in range(0, 3):
+            strArr[i] = "".join(gattClientOrders[i])
+        print(strArr)
      
 #Register BLE event
 uart.irq(handler=on_rx)
