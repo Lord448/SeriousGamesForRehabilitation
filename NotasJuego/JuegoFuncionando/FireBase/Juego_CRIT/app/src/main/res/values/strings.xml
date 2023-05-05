@@ -1,0 +1,33 @@
+<resources>
+    <string name="app_name">Juego Escalera Hombro</string>
+
+    <!--MAIN ACTIVITY-->
+    <string name="BTN_LOGIN">INICIAR SESIÓN</string>
+    <string name="BTN_REGISTER">REGISTRARME</string>
+
+    <!--ACTIVIDAD DE REGISTRO-->
+    <string name="etName">Nombre Completo</string>
+    <string name="etPassword">Contraseña</string>
+    <string name="etMail">Correo</string>
+    <string name="tvDate">Fecha</string>
+    <string name="btnRegister">REGISTRAR</string>
+
+    <!--ACTIVIDAD DE LOGIN-->
+    <string name="etMailLogin">Correo</string>
+    <string name="etPswLogin">Contraseña</string>
+    <string name="btnLogin">INGRESAR</string>
+
+    <!--MENU-->
+    <string name="txtMyPoints">Mi Puntuación</string>
+    <string name="time">--</string>
+    <string name="uid">--</string>
+    <string name="email">--</string>
+    <string name="name">--</string>
+    <string name="registration_date">--</string>
+    <string name="txtMenu">Menú</string>
+
+    <string name="btnPlay">Jugar</string>
+    <string name="btnAboutApp">Acerca de</string>
+    <string name="btnLogout">CERRAR SESIÓN</string>
+
+</resources>
