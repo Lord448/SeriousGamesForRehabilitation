@@ -52,10 +52,8 @@ public class Menu extends AppCompatActivity {
         Play.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(Menu.this, GameScreen.class);
-                Toast.makeText(Menu.this, "Jugar", Toast.LENGTH_SHORT).show();
-                startActivity(intent);
-                /*
+                Intent intent = new Intent(Menu.this, Game.class);
+
                 String strUid = Uid.getText().toString();
                 String strName = Name.getText().toString();
                 String strPoints = Points.getText().toString();
@@ -65,7 +63,7 @@ public class Menu extends AppCompatActivity {
                 intent.putExtra("POINTS", strPoints);
 
                 startActivity(intent);
-                Toast.makeText(Menu.this, "enviando datos...", Toast.LENGTH_SHORT).show();*/
+                Toast.makeText(Menu.this, "enviando datos...", Toast.LENGTH_SHORT).show();
             }
         });
 
