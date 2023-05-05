@@ -4,6 +4,7 @@ import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.viewport.StretchViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
@@ -17,10 +18,12 @@ public class GameScreen implements Screen {
     /*GRAPHICS*/
     private SpriteBatch batch;
     private Texture[] backgrounds;
-    private Texture playerShipTexture, starTexture;
+    private Texture[] staticbackgrounds;
+    private Texture treeHouse;
+    private Texture animalTexture, wizardTexture;
 
     /*TIMING*/
-    private float[] backgroundOffsets = {0,0,0,0};
+    private float[] backgroundOffsets = {0,0};
     private float backgroundMaxScrollingSpeed;
 
     /*WORLD PARAMETERS*/
@@ -34,10 +37,18 @@ public class GameScreen implements Screen {
         batch = new SpriteBatch();
 
         backgrounds = new Texture[4];
-        backgrounds [0] = new Texture("layer1.png");
-        backgrounds [1] = new Texture("layer2.png");
-        backgrounds [2] = new Texture("layer3.png");
-        backgrounds [3] = new Texture("layer4.png");
+        backgrounds [0] = new Texture("layer_sky.png");
+        backgrounds [1] = new Texture("layer_clouds.png");
+
+        staticbackgrounds = new Texture[6];
+        staticbackgrounds[0] = new Texture("layer0_grasp.png");
+        staticbackgrounds[1] = new Texture("layer1_grasp.png");
+        staticbackgrounds[2] = new Texture("layer2_grasp.png");
+        staticbackgrounds[3] = new Texture("layer3_tree0.png");
+        staticbackgrounds[4] = new Texture("layer4_tree1.png");
+        staticbackgrounds[5] = new Texture("layer5_grasp.png");
+
+        treeHouse = new Texture("tree_house.png");
 
         backgroundMaxScrollingSpeed = (float)(WORLD_HEIGHT)/4;
 
@@ -53,24 +64,34 @@ public class GameScreen implements Screen {
         batch.begin();
 
         /*SCROLLING BACKGROUND*/
-        renderBackground(deltaTime);
+        renderDynamicBackground(deltaTime);
+        //Static background
+        renderStaticBackground();
+        //Treehouse
+        batch.draw(treeHouse, 45, 0, 25, WORLD_HEIGHT);
 
         batch.end();
     }
 
-    private void renderBackground(float deltaTime) {
-        backgroundOffsets [0] += deltaTime * backgroundMaxScrollingSpeed / 16 ;
-        backgroundOffsets [1] += deltaTime * backgroundMaxScrollingSpeed / 8;
-        backgroundOffsets [2] += deltaTime * backgroundMaxScrollingSpeed / 4 ;
-        backgroundOffsets [3] += deltaTime * backgroundMaxScrollingSpeed / 2;
+    private void renderDynamicBackground(float deltaTime) {
+        backgroundOffsets [0] += deltaTime * backgroundMaxScrollingSpeed / 64;
+        backgroundOffsets [1] += deltaTime * backgroundMaxScrollingSpeed / 32;
 
         for(int layer = 0 ; layer < backgroundOffsets.length ; layer++){
-            if(backgroundOffsets[layer] > WORLD_HEIGHT){
+            if(backgroundOffsets[layer] > WORLD_WIDHT){
                 backgroundOffsets[layer] = 0;
             }
-            batch.draw(backgrounds[layer], 0, -backgroundOffsets[layer], WORLD_WIDHT, WORLD_HEIGHT);
-            batch.draw(backgrounds[layer], 0, -backgroundOffsets[layer] + WORLD_HEIGHT, WORLD_WIDHT, WORLD_HEIGHT);
+            batch.draw(backgrounds[layer], -backgroundOffsets[layer], 0, WORLD_WIDHT, WORLD_HEIGHT);
+            batch.draw(backgrounds[layer], -backgroundOffsets[layer]+ WORLD_WIDHT, 0 , WORLD_WIDHT, WORLD_HEIGHT);
         }
+    }
+    public void renderStaticBackground(){
+        batch.draw(staticbackgrounds[0],0, 0, WORLD_WIDHT, WORLD_HEIGHT);
+        batch.draw(staticbackgrounds[1],0, 0, WORLD_WIDHT, WORLD_HEIGHT);
+        batch.draw(staticbackgrounds[2],0, 0, WORLD_WIDHT, WORLD_HEIGHT);
+        batch.draw(staticbackgrounds[3],-20, 0, WORLD_WIDHT, WORLD_HEIGHT);
+        batch.draw(staticbackgrounds[4],-7, 0, WORLD_WIDHT, WORLD_HEIGHT);
+        batch.draw(staticbackgrounds[5],0, 0, WORLD_WIDHT, WORLD_HEIGHT);
     }
 
     @Override
