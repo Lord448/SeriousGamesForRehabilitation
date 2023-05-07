@@ -30,6 +30,9 @@ public class GameScreen implements Screen {
     private final int WORLD_WIDHT = 72;
     private final int WORLD_HEIGHT = 128;
 
+    /*CHARACTER*/
+    private Wizard wizard;
+
     GameScreen(){
 
         camera = new OrthographicCamera();
@@ -37,22 +40,23 @@ public class GameScreen implements Screen {
         batch = new SpriteBatch();
 
         backgrounds = new Texture[4];
-        backgrounds [0] = new Texture("layer_sky.png");
-        backgrounds [1] = new Texture("layer_clouds.png");
+        backgrounds [0] = new Texture("Background/layer_sky.png");
+        backgrounds [1] = new Texture("Background/layer_clouds.png");
 
         staticbackgrounds = new Texture[6];
-        staticbackgrounds[0] = new Texture("layer0_grasp.png");
-        staticbackgrounds[1] = new Texture("layer1_grasp.png");
-        staticbackgrounds[2] = new Texture("layer2_grasp.png");
-        staticbackgrounds[3] = new Texture("layer3_tree0.png");
-        staticbackgrounds[4] = new Texture("layer4_tree1.png");
-        staticbackgrounds[5] = new Texture("layer5_grasp.png");
-
-        treeHouse = new Texture("tree_house.png");
+        staticbackgrounds[0] = new Texture("Background/layer0_grasp.png");
+        staticbackgrounds[1] = new Texture("Background/layer1_grasp.png");
+        staticbackgrounds[2] = new Texture("Background/layer2_grasp.png");
+        staticbackgrounds[3] = new Texture("Background/layer3_tree0.png");
+        staticbackgrounds[4] = new Texture("Background/layer4_tree1.png");
+        staticbackgrounds[5] = new Texture("Background/layer5_grasp.png");
+        treeHouse = new Texture("Background/tree_house.png");
 
         backgroundMaxScrollingSpeed = (float)(WORLD_HEIGHT)/4;
 
         batch = new SpriteBatch();
+
+        wizard = new Wizard(5, 5);
     }
     @Override
     public void show() {
@@ -69,6 +73,8 @@ public class GameScreen implements Screen {
         renderStaticBackground();
         //Treehouse
         batch.draw(treeHouse, 45, 0, 25, WORLD_HEIGHT);
+        //wizard
+        wizard.render(batch);
 
         batch.end();
     }
