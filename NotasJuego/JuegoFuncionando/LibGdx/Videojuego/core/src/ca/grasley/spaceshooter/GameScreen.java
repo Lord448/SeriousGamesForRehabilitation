@@ -32,6 +32,7 @@ public class GameScreen implements Screen {
 
     /*CHARACTER*/
     private Wizard wizard;
+    private Animal animal;
 
     GameScreen(){
 
@@ -56,7 +57,8 @@ public class GameScreen implements Screen {
 
         batch = new SpriteBatch();
 
-        wizard = new Wizard(5, 5);
+        wizard = new Wizard(15 , 5);
+        animal = new Animal(55, 5);
     }
     @Override
     public void show() {
@@ -72,10 +74,11 @@ public class GameScreen implements Screen {
         //Static background
         renderStaticBackground();
         //Treehouse
-        batch.draw(treeHouse, 45, 0, 25, WORLD_HEIGHT);
+        batch.draw(treeHouse, 45, 0, 25, WORLD_HEIGHT+20);
         //wizard
         wizard.render(batch);
-
+        //animal
+        animal.render(batch);
         batch.end();
     }
 

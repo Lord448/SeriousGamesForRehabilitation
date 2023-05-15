@@ -13,23 +13,27 @@ public class Wizard {
     private int x, y;
     private Animation animation;
     private float time;
-    private Texture wizard_texture;
+    private Texture wizard_idle, wizard_spell;
     private TextureRegion actualFrame;
 
     public Wizard(int x, int y){
         this.x = x;
         this.y = y;
-        wizard_texture = new Texture("Wizard/wizard.png");
-        TextureRegion [][] temporal = TextureRegion.split(wizard_texture,
-                wizard_texture.getWidth()/3, wizard_texture.getHeight()/4);
+        wizard_idle = new Texture("Wizard/wizard_idle.png");
+        wizard_spell = new Texture("Wizard/wizard_spell.png");
+        TextureRegion [][] temporal = TextureRegion.split(wizard_idle,
+                wizard_idle.getWidth()/3, wizard_idle.getHeight()/4);
+
+        /*
         idleMovement(temporal);
+
         time += Gdx.graphics.getDeltaTime();        //tiempo transcurrido desde el ultimo render
         actualFrame = animation.getKeyFrame(time, true);
-        time = 0;
+        time = 0; */
     }
 
     public void render(final SpriteBatch batch){
-        batch.draw(actualFrame, x, y);
+        batch.draw(wizard_idle, x, y, 10, 25);
     }
 
     private void idleMovement(TextureRegion[][] tmp){
