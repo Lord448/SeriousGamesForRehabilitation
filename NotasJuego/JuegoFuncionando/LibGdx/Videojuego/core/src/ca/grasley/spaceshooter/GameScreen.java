@@ -14,13 +14,12 @@ public class GameScreen implements Screen {
     /*SCREEN*/
     private Camera camera;
     private Viewport viewport;
-
     /*GRAPHICS*/
     private SpriteBatch batch;
     private Texture[] backgrounds;
     private Texture[] staticbackgrounds;
     private Texture treeHouse;
-    private Texture animalTexture, wizardTexture;
+    //private Texture animalTexture, wizardTexture;
 
     /*TIMING*/
     private float[] backgroundOffsets = {0,0};
