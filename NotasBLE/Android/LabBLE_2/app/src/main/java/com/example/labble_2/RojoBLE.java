@@ -94,7 +94,7 @@ public class RojoBLE {
             return;
         }
         mDevice = BluetoothAdapter.getDefaultAdapter().getRemoteDevice(this.mDeviceMacAddress);
-        if (ActivityCompat.checkSelfPermission(context, android.Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED) {
+        if (ActivityCompat.checkSelfPermission(context, android.Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions((Activity) context, btPermissions, REQUEST_ENABLE_BT);
             ActivityCompat.requestPermissions((Activity) context, btPermissions, REQUEST_ENABLE_ADMIN_BT);
         }
