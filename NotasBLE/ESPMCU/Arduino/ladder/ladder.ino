@@ -118,9 +118,10 @@ enum action{
     normalRutine
 }action;
 
+void sendData(char *buffer, BLECharacteristic *pTXCharacteristic);
+
 const uint32_t promValues = 1000;
 uint32_t touchVals[promValues];
-
 BLEServer *pServer = NULL;
 BLECharacteristic *pTxCharacteristic;
 bool deviceConnected = false;
@@ -140,8 +141,6 @@ uint32_t touchGPIO[10] = {
                     27,  //Touch pin 7
                     33,  //Touch pin 8
                     32}; //Touch pin 9
-
-void sendData(char *buffer, BLECharacteristic *pTXCharacteristic);
 
 class MyServerCallbacks: public BLEServerCallbacks {
     void onConnect(BLEServer* pServer) {
