@@ -1,100 +1,77 @@
 package ca.grasley.spaceshooter;
 
+import static com.badlogic.gdx.Input.Keys.NUM_0;
 import static com.badlogic.gdx.Input.Keys.NUM_1;
 import static com.badlogic.gdx.Input.Keys.NUM_2;
 import static com.badlogic.gdx.Input.Keys.NUM_3;
 import static com.badlogic.gdx.Input.Keys.NUM_4;
+import static com.badlogic.gdx.Input.Keys.NUM_5;
+import static com.badlogic.gdx.Input.Keys.NUM_6;
+import static com.badlogic.gdx.Input.Keys.NUM_7;
+import static com.badlogic.gdx.Input.Keys.NUM_8;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Input;
-import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 
-import java.awt.event.KeyListener;
-
 public class Animal {
+    private final int touchPins = 9 - 1;
+    private final int maxLim = 80, minLim = 20;
     private float x, y;
     private float speed;
-    private float pos1=20, pos2=40, pos3=60, pos4 = 80;
+    private float positions[] = new float[touchPins];
     private float posactual;
     private static final double histeresis = 0.15;
-    private boolean n1=false, n2=false, n3=false, n4=false;
+    private boolean n[] = new boolean[touchPins];
     private Texture animal_texture;
 
-    public Animal (int x, int y, float speed){
+    private int key[] = {
+            NUM_0,
+            NUM_1,
+            NUM_2,
+            NUM_3,
+            NUM_4,
+            NUM_5,
+            NUM_6,
+            NUM_7,
+            NUM_8,
+    };
+
+    public Animal (int x, int y, float speed) {
+        float positionSet = 0;
         this.x = x;
         this.y = y;
         this.speed = speed;
         animal_texture = new Texture("Animals/cutiehamster.png");
+        //Each position has a step of 7.5 units
+        for(int i = 0; i < positions.length; i++) {
+            positionSet += ((float) (maxLim - minLim) / positions.length);
+            positions[i] = positionSet;
+            System.out.println(positions[i]);
+        }
     }
     public void render(final SpriteBatch batch){
         batch.draw(animal_texture, x, y, 5, 15);
         posactual = y;
-        if(Gdx.input.isKeyPressed(NUM_1)){
-            n2 = false;
-            n3= false;
-            n4 = false;
-            n1 = true;
-        }
-        if(Gdx.input.isKeyPressed(NUM_2)) {
-            n1= false;
-            n3=false;
-            n4=false;
-            n2 = true;
-        }
-        if(Gdx.input.isKeyPressed(NUM_3)) {
-            n1= false;
-            n2=false;
-            n4=false;
-            n3 = true;
-        }
-        if(Gdx.input.isKeyPressed(NUM_4)) {
-            n1= false;
-            n3=false;
-            n2=false;
-            n4 = true;
-        }
-        if(n1 == true){
-            if (posactual > pos1+histeresis){
-                y -= Gdx.graphics.getDeltaTime()*speed;
+
+        for(int i = 0; i < touchPins; i++) {
+            if(Gdx.input.isKeyPressed(key[i])) {
+                n[i] = true;
+                for(int j = 0; j < touchPins; j++) {
+                    if(j != i)
+                        n[j] = false;
+                }
             }
-            if (posactual < pos1-histeresis){
-                y += Gdx.graphics.getDeltaTime()*speed;
-            }
-        }
-        if(n2 == true){
-            if (posactual > pos2+histeresis){
-                y -= Gdx.graphics.getDeltaTime()*speed;
-            }
-            if (posactual < pos2-histeresis){
-                y += Gdx.graphics.getDeltaTime()*speed;
-            }
-        }
-        if(n3 == true){
-            if (posactual > pos3+histeresis){
-                y -= Gdx.graphics.getDeltaTime()*speed;
-            }
-            if (posactual < pos3-histeresis){
-                y += Gdx.graphics.getDeltaTime()*speed;
-            }
-        }
-        if(n4 == true){
-            if (posactual > pos4+histeresis){
-                y -= Gdx.graphics.getDeltaTime()*speed;
-            }
-            if (posactual < pos4-histeresis){
-                y += Gdx.graphics.getDeltaTime()*speed;
-            }
+
         }
 
-
-        /*
-        if(Gdx.input.isKeyPressed(Input.Keys.NUM_1)){
-            y += Gdx.graphics.getDeltaTime()*speed;
+        for(int i = 0; i < touchPins; i++) {
+            if(n[i]) {
+                if(posactual > positions[i]+histeresis)
+                    y -= Gdx.graphics.getDeltaTime()*speed;
+                else if(posactual < positions[i]-histeresis)
+                    y += Gdx.graphics.getDeltaTime()*speed;
+            }
         }
-        if(Gdx.input.isKeyPressed(Input.Keys.NUM_2)){
-            y -= Gdx.graphics.getDeltaTime()*speed;
-        }*/
     }
 }
