@@ -36,6 +36,91 @@
 #define CHARACTERISTIC_UUID_RX "006e861c-0a45-11ee-be56-0242ac120002"
 #define CHARACTERISTIC_UUID_TX "058804de-0a45-11ee-be56-0242ac120002"
 
+/**
+ * @brief contanins the booleans that handle the response of the
+ *        ble client into the calibration subrutine
+ */
+struct bleFlags{
+    bool start;
+    bool interrupt;
+    bool confirm;
+    bool denied;
+    bool undo;
+    bool restart;
+}bleFlags = {
+    .start = false,
+    .interrupt = false,
+    .confirm = false,
+    .denied = false,
+    .undo = false,
+    .restart = false
+};
+
+/**
+ * @brief 
+ * 
+ */
+struct bleSendStrigs{
+    char dataTakenFinished[5];
+    char finishedCalibration[5];
+    char doCalReceived[15];
+    char startCal[15];
+    char isrCal[15];
+    char deniedResponse[20];
+    char requestConfirm[15];
+    char dataSet[10];
+    char deniedRequest[20];
+    char undoCal[10];
+    char restartCal[20];
+    char valueToSend[5];
+}bleSend = {
+    .dataTakenFinished = "DTKF",
+    .finishedCalibration = "FCAL", /*
+    .doCalReceived = "Calibrating.." 
+    .startCal = "Starting Cal", 
+    .isrCal = "Interrup Cal",
+    .deniedResponse = "Response denied", 
+    .requestConfirm = "Please confirm",
+    .dataSet = "dataSet",
+    .deniedRequest = "Undo or restart",
+    .undoCal = "undoCal",
+    .restartCal = "restarting cal"*/
+};
+
+/**
+ * @brief 
+ * 
+ */
+struct bleRxStrings{
+    char doCalibration[6];
+    char startCalibration[9];
+    char interruptCalibration[7];
+    char confirmThresValue[8];
+    char valueDenied[7];
+    char undo[6];
+    char restart[10];
+}bleRxStrings = {
+    .doCalibration = "doCal",
+    .startCalibration = "startCal",
+    .interruptCalibration = "isrCal",
+    .confirmThresValue = "confVal",
+    .valueDenied = "valDen",/*
+    .undo = "undo",
+    .restart = "restart"*/
+};
+
+/**
+ * @brief 
+ * 
+ */
+enum action{
+    doCalibrate,
+    normalRutine
+}action;
+
+const uint32_t promValues = 1000;
+uint32_t touchVals[promValues];
+
 BLEServer *pServer = NULL;
 BLECharacteristic *pTxCharacteristic;
 bool deviceConnected = false;
@@ -76,19 +161,44 @@ class MyCallbacks: public BLECharacteristicCallbacks {
             Serial.print("Received Value: ");
             for (int i = 0; i < rxValue.length(); i++)
             Serial.print(rxValue[i]);
-            //@todo handle message
+            if(rxValue.compare(bleRxStrings.doCalibration) == 0) {
+                action = doCalibrate;
+                Serial.println(bleSend.doCalReceived);
+                sendData(bleSend.doCalReceived, pTxCharacteristic);
+            }
+            else if(rxValue.compare(bleRxStrings.startCalibration) == 0) {
+                bleFlags.start = true;
+                Serial.println(bleSend.startCal);
+                sendData(bleSend.startCal, pTxCharacteristic);
+            }
+            else if(rxValue.compare(bleRxStrings.interruptCalibration) == 0) {
+                bleFlags.interrupt = true;
+                Serial.println(bleSend.isrCal);
+                sendData(bleSend.isrCal, pTxCharacteristic);
+            }
+            else if(rxValue.compare(bleRxStrings.confirmThresValue) == 0) {
+                bleFlags.confirm = true;
+
+            }
+            else if(rxValue.compare(bleRxStrings.valueDenied) == 0)
+                bleFlags.denied = true;
+            else
+                Serial.println("Data not handled");
         }
     }
 };
 
 
 void setup() {
+
     Serial.begin(115200);
 
     for(uint32_t i = 0; i < 10; i++) {
         touchPins[i] = i;
         wasTouched[i] = false;
     }
+
+    action = normalRutine;
 
     pinMode(LED_PIN, OUTPUT);
 
@@ -130,33 +240,93 @@ void loop() {
         if(digitalRead(LED_PIN) == 0)
             digitalWrite(LED_PIN, 1);
 
-        
-        for(uint32_t i = 0; i < 10; i++) {
-            #ifndef CALIBRATION_MODE
+        switch(action)
+        {
+            case normalRutine:
+                for(uint32_t i = 0; i < 10; i++) {
+                    #ifndef CALIBRATION_MODE
+                        #ifdef PIN30
+                        if(i == 1)
+                            continue;
+                        #endif // PIN30
 
-                #ifdef PIN30
-                if(i == 1)
-                    continue;
-                #endif // PIN30
-
-                if(touchRead(touchGPIO[i]) < threshold) { //User takes pin
-                    if(!wasTouched[i]) {
-                        sprintf(Buffer, "T%d", touchPins[i]);
-                        sendData(Buffer, pTxCharacteristic);
-                        wasTouched[i] = true;
+                    if(touchRead(touchGPIO[i]) < threshold) { //User takes pin
+                        if(!wasTouched[i]) {
+                            sprintf(Buffer, "T%d", touchPins[i]);
+                            sendData(Buffer, pTxCharacteristic);
+                            wasTouched[i] = true;
+                        }
                     }
+                    else if(wasTouched[i]) { //User drops pin
+                        wasTouched[i] = false;
+                    }
+                    #else
+                        Serial.printf("Pin: %d, Value: %d \n", touchPins[i], touchRead(touchGPIO[i]));
+                            #ifdef CALIBRATION_MODE_BT
+                                static char pinval[25];
+                                sprintf(pinval, "Pin: %d, Value: %d \n", touchPins[i], touchRead(touchGPIO[i]));
+                                sendData(pinval, pTxCharacteristic);
+                            #endif // SEND_TO_BT
+                    #endif // ENABLE_CALIBRATION
+                }  
+            break;
+            case doCalibrate:
+                uint32_t sume;
+                float average;
+
+                Serial.println("Entering in calibration mode");
+                if(bleFlags.interrupt) {
+                    resetFlags();
+                    threshold = DEFAULT_THRESHOLD;
+                    action = normalRutine;
                 }
-                else if(wasTouched[i]) { //User drops pin
-                    wasTouched[i] = false;
+                else if(bleFlags.start) {
+                    for(uint32_t i = 0; i < promValues; i++) {
+                        touchVals[i] = touchRead(touchGPIO[0]);
+                        sendData(bleSend.dataTakenFinished, pTxCharacteristic);
+                    }
+                    for(uint32_t i = 0; i < promValues; i++)
+                        sume += touchVals[i];
+                    average = sume/promValues;
+                    Serial.printf("Avg: %2.2f", average);
+                    sprintf(bleSend.valueToSend, "%d", (uint32_t) average);
+                    sendData(bleSend.valueToSend, pTxCharacteristic);
+
+                    for(uint32_t i = 0; bleFlags.confirm; i++) {
+                        if(i == 1)
+                            sendData(bleSend.requestConfirm, pTxCharacteristic);
+                    }
+
+                    if(bleFlags.confirm) {
+                        threshold = (uint32_t) average;
+                        action = normalRutine;
+                        sendData(bleSend.dataSet, pTxCharacteristic);
+                        Serial.println("Value confirmed");
+                    }
+
+                    else if(bleFlags.denied) {
+                        for(uint32_t i = 0; bleFlags.undo || bleFlags.restart; i++) {
+                            if(i == 1)
+                                sendData(bleSend.deniedRequest, pTxCharacteristic);
+                        }
+                        if(bleFlags.undo) {
+                            action = normalRutine;
+                            sendData(bleSend.undoCal, pTxCharacteristic);
+                        }
+                        else if(bleFlags.restart) {
+                            sendData(bleSend.restartCal, pTxCharacteristic);
+                        }
+                        else {
+                            Serial.println("Data not handled");
+                            action = normalRutine;
+                        }
+                    }
+                    
                 }
-            #else
-                Serial.printf("Pin: %d, Value: %d \n", touchPins[i], touchRead(touchGPIO[i]));
-                    #ifdef CALIBRATION_MODE_BT
-                        static char pinval[25];
-                        sprintf(pinval, "Pin: %d, Value: %d \n", touchPins[i], touchRead(touchGPIO[i]));
-                        sendData(pinval, pTxCharacteristic);
-                    #endif // SEND_TO_BT
-            #endif // ENABLE_CALIBRATION
+            break;
+            default:
+                Serial.println("Warning: Case not handled");
+            break;
         }
 	}
 
@@ -173,6 +343,18 @@ void loop() {
     if (deviceConnected && !oldDeviceConnected) {
 		// do stuff here on connecting
         oldDeviceConnected = deviceConnected;
+    }
+}
+
+/**
+ * @brief Using pointer all the structure is cleaned by 
+ *        setting the flags to false
+ */
+void resetFlags(void) {
+    bool *p = &bleFlags.start;
+    for(uint16_t i = 0; i < sizeof(bleFlags); i++) {
+        *p = false;
+        p++;
     }
 }
 
