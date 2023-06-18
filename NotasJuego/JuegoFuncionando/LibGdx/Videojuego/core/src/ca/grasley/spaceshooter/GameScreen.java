@@ -53,11 +53,9 @@ public class GameScreen implements Screen {
         treeHouse = new Texture("Background/tree_house.png");
 
         backgroundMaxScrollingSpeed = (float)(WORLD_HEIGHT)/4;
-
-        batch = new SpriteBatch();
-
+        /*Characters*/
         wizard = new Wizard(15 , 5);
-        animal = new Animal(55, 5);
+        animal = new Animal(55, 5, 30);
     }
     @Override
     public void show() {
@@ -67,17 +65,13 @@ public class GameScreen implements Screen {
     @Override
     public void render(float deltaTime) {
         batch.begin();
+            /*SCROLLING BACKGROUND*/
+            renderDynamicBackground(deltaTime);
+            renderStaticBackground();
 
-        /*SCROLLING BACKGROUND*/
-        renderDynamicBackground(deltaTime);
-        //Static background
-        renderStaticBackground();
-        //Treehouse
-        batch.draw(treeHouse, 45, 0, 25, WORLD_HEIGHT+20);
-        //wizard
-        wizard.render(batch);
-        //animal
-        animal.render(batch);
+            batch.draw(treeHouse, 45, 0, 25, WORLD_HEIGHT+20);
+            wizard.render(batch);
+            animal.render(batch);
         batch.end();
     }
 

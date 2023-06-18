@@ -14,6 +14,9 @@ import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 
 public class Wizard {
+    /*CONSTANTES RÁPIDAS*/
+    private static final float spellingSpeed = 1/8f;
+    private static final float wizardWitdh = 20, wizardHeight = 40;
     public int x, y;
     private boolean spelling = false;
     public Animation spellingAnimation;
@@ -31,12 +34,10 @@ public class Wizard {
 
         /*Cargar la img*/
         image = new Texture(Gdx.files.internal("Wizard/wizard.png"));
-        TextureRegion [][] tmp = TextureRegion.split(image,
-                image.getWidth()/3, image.getHeight()/4);
+        TextureRegion [][] tmp = TextureRegion.split(image,image.getWidth()/3, image.getHeight()/4);
 
         /*Wizard Spelling*/
         spellingMovement(tmp);
-
         /*Wizard Idle*/
         idleMovement(tmp);
 
@@ -45,14 +46,14 @@ public class Wizard {
     }
     public void render(final SpriteBatch batch) {
 
-        if(Gdx.input.isKeyJustPressed(NUM_1) || Gdx.input.isKeyJustPressed(NUM_2)|| Gdx.input.isKeyJustPressed(NUM_3)|| Gdx.input.isKeyJustPressed(NUM_4)){
+        if(Gdx.input.isKeyPressed(NUM_1) || Gdx.input.isKeyPressed(NUM_2)|| Gdx.input.isKeyPressed(NUM_3)|| Gdx.input.isKeyPressed(NUM_4)){
             spelling = true;
         }
         if(spelling == true) {
             spellingTime += Gdx.graphics.getDeltaTime();
             currentSpelling_Frame = (TextureRegion) spellingAnimation.getKeyFrame(spellingTime, true);
-            batch.draw(currentSpelling_Frame, x, y, 20, 30);
-            if (spellingTime >= 0.78f) {
+            batch.draw(currentSpelling_Frame, x, y, wizardWitdh, wizardHeight);
+            if (spellingTime >= spellingSpeed*4) {
                 spelling = false;
                 spellingTime = 0;
             }
@@ -60,7 +61,7 @@ public class Wizard {
         if(spelling == false){
             time += Gdx.graphics.getDeltaTime();
             currentIdle_Frame = (TextureRegion) idleAnimation.getKeyFrame(time, true);
-            batch.draw(currentIdle_Frame, x, y, 20, 30);
+            batch.draw(currentIdle_Frame, x, y, wizardWitdh, wizardHeight);
         }
     }
     private void spellingMovement(TextureRegion [][] temporal){
@@ -74,7 +75,7 @@ public class Wizard {
                 w++;
             }
         }
-        spellingAnimation=new Animation<>(1/10f, spellingMovement);
+        spellingAnimation=new Animation<>(spellingSpeed, spellingMovement);
     }
     private void idleMovement(TextureRegion [][] temporal){
         idleMovement = new TextureRegion[6];
