@@ -19,8 +19,6 @@ public class GameScreen implements Screen {
     private Texture[] backgrounds;
     private Texture[] staticbackgrounds;
     private Texture treeHouse;
-    //private Texture animalTexture, wizardTexture;
-
     /*TIMING*/
     private float[] backgroundOffsets = {0,0};
     private float backgroundMaxScrollingSpeed;
