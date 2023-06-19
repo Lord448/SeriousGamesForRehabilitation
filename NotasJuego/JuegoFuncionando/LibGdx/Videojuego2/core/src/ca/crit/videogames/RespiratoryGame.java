@@ -2,25 +2,23 @@ package ca.crit.videogames;
 
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Game;
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.ScreenUtils;
 
 public class RespiratoryGame extends Game {
 	GameScreen gameScreen;
-	
 	@Override
 	public void create () {
 		gameScreen = new GameScreen();
 		setScreen(gameScreen);
 	}
 	@Override
-	public void render () {
-		super.render();
-	}
+	public void render () { super.render(); }
 	@Override
 	public void dispose () {
-		gameScreen.dispose();
+		super.dispose();
 	}
 	@Override
 	public void resize(int width, int height) {
