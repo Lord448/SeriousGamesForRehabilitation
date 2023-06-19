@@ -14,7 +14,6 @@ import android.util.Log;
  * @brief Implementation of the BluetoothGattCallback and overrides some methods
  * @note You will need to create an object per characteristic
  */
-@TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
 @SuppressLint("MissingPermission")
 public class MyGattCallback extends BluetoothGattCallback {
     private static final String TAG = "GattCallback";

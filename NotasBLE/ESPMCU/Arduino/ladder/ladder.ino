@@ -14,7 +14,7 @@
 #include <BLEUtils.h>
 #include <BLE2902.h>
 
-#define SERVER_NAME "UART Service"
+#define SERVER_NAME "Ladder"
 #define LED_PIN 2
 #define DEFAULT_THRESHOLD 60
 

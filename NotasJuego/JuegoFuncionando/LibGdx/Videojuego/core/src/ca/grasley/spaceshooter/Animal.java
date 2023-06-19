@@ -24,7 +24,6 @@ public class Animal {
     private static final double histeresis = 0.15;
     private boolean n[] = new boolean[touchPins];
     private Texture animal_texture;
-
     private int key[] = {
             NUM_0,
             NUM_1,
@@ -36,14 +35,13 @@ public class Animal {
             NUM_7,
             NUM_8,
     };
-
     public Animal (int x, int y, float speed) {
         float positionSet = 0;
         this.x = x;
         this.y = y;
         this.speed = speed;
         animal_texture = new Texture("Animals/cutiehamster.png");
-        //Each position has a step of 7.5 units
+        //Each position has a step of 7.5 units when we have a length of 8 positions
         for(int i = 0; i < positions.length; i++) {
             positionSet += ((float) (maxLim - minLim) / positions.length);
             positions[i] = positionSet;
