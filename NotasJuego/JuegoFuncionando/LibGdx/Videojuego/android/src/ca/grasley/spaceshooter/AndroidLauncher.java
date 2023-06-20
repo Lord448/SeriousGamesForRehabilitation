@@ -16,8 +16,8 @@ import ca.grasley.spaceshooter.JuegoCRIT_Game;
 
 public class AndroidLauncher extends AndroidApplication {
 
-	public static final UUID txChUUID = UUID.fromString("6E400003-B5A3-F393-E0A9-E50E24DCCA9E");
-	public static final UUID rxChUUID = UUID.fromString("6E400002-B5A3-F393-E0A9-E50E24DCCA9E");
+	public static final UUID txChUUID = UUID.fromString("058804de-0a45-11ee-be56-0242ac120002");
+	public static final UUID rxChUUID = UUID.fromString("006e861c-0a45-11ee-be56-0242ac120002");
 
 	private static final String TAG = "AndroidLauncher";
 	private static final String deviceName = "Ladder";
@@ -60,8 +60,12 @@ public class AndroidLauncher extends AndroidApplication {
 		strValue = new String(value, StandardCharsets.UTF_8);
 		Log.i(TAG, "Received: " + strValue);
 		for(int i = 0; i < strReceptions.length; i++) {
-			if(strValue.toLowerCase().trim().equals(strReceptions[i])) {
-				//Code here
+			if(strValue.toLowerCase().trim().equals(strReceptions[i].toLowerCase().trim())) {
+				GameHandler.touchPins[i] = true;
+				for(int j = 0; j < GameHandler.numTouchPins; j++) {
+					if(j != i)
+						GameHandler.touchPins[j] = false;
+				}
 				return;
 			}
 		}
