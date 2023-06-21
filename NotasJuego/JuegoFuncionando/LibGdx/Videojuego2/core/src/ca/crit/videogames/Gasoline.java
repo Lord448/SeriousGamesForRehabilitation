@@ -2,6 +2,7 @@ package ca.crit.videogames;
 
 import static com.badlogic.gdx.Input.Keys.UP;
 
+import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
@@ -17,7 +18,6 @@ public class Gasoline {
     /*BARRA Y GASOLINA*/
     private TextureRegion[] fillMovement;
     private Texture imageBar, gasStation;
-    private boolean filled = false;
     private float Time, pastTime;
 
     public Gasoline(int x, int y){
@@ -36,23 +36,26 @@ public class Gasoline {
     public void render(float deltaTime, final SpriteBatch batch){
         batch.draw(gasStation, x, y, GAS_WIDTH, GAS_HEIGHT);
         Time += deltaTime;
-        filled = Gdx.input.isKeyPressed(UP);
-        if(Time >= (pastTime+TiempoAnimacionCompleta / 16)){
-            pastTime = Time;
+        if(!GameHandler.stageReached) {
+            if (Gdx.input.isKeyPressed(UP))
+                GameHandler.filled = true;
+            if (Time >= (pastTime + TiempoAnimacionCompleta / 16)) {
+                pastTime = Time;
 
-            if(filled){
-                iterator++;
-            }else {
-                iterator--;
+                if (GameHandler.filled) {
+                    iterator++;
+                } else {
+                    iterator--;
+                }
             }
+            if (iterator < 0) {
+                iterator = 15;
+            }
+            if (iterator == 15) {
+                iterator = 0;
+            }
+            batch.draw(fillMovement[iterator], x, y + (GAS_HEIGHT), BAR_WIDTH, BAR_HEIGHT);
         }
-        if(iterator<0){
-            iterator = 15;
-        }
-        if(iterator == 15){
-            iterator = 0;
-        }
-        batch.draw(fillMovement[iterator], x, y+(GAS_HEIGHT), BAR_WIDTH, BAR_HEIGHT);
     }
 
     public int getIterator() {

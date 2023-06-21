@@ -1,4 +1,4 @@
-package ca.grasley.spaceshooter;
+package ca.crit.videogames;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
