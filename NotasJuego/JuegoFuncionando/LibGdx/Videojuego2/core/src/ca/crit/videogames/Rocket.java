@@ -19,13 +19,17 @@ public class Rocket {
     private boolean rocket_takeoff = false;
     private int x, y;
     private float speed;
+    private int verificacion;
     private static final int LANDING_POINT = ROCKET_HEIGHT + 38;
+    /*CLASE GASOLINE*/
+    private Gasoline gasoline;
 
     public Rocket(int x, int y, float speed){
         this.x = x;
         this.y = y;
         this.speed = speed;
 
+        gasoline = new Gasoline(93, 1);
         /*CARGAR IMÁGENES*/
         island = new Texture(Gdx.files.internal("island.png"));
         land = new Texture(Gdx.files.internal("plataforma.png"));
@@ -37,8 +41,9 @@ public class Rocket {
     public void render(float deltaTime, final SpriteBatch batch) {
         batch.draw(island, x-11, ROCKET_HEIGHT + 25, ISLAND_WIDTH, ISLAND_HEIGHT);
         batch.draw(land, x-8, ROCKET_HEIGHT + 30, LANDING_WIDTH, LANDING_HEIGHT);
+        gasoline.render(deltaTime, batch);
 
-        if(Gdx.input.isKeyPressed(Input.Keys.SPACE)) {
+        if(gasoline.getIterator() >= 14) {
             rocket_takeoff = true;
         }
         if(rocket_takeoff){
