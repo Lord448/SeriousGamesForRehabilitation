@@ -10,21 +10,18 @@ import static com.badlogic.gdx.Input.Keys.NUM_6;
 import static com.badlogic.gdx.Input.Keys.NUM_7;
 import static com.badlogic.gdx.Input.Keys.NUM_8;
 
+import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 
 public class Animal {
-    private final int touchPins = 9 - 1;
     private final int maxLim = 80, minLim = 20;
     private float x, y;
     private float speed;
-    private float positions[] = new float[touchPins];
-    private float posactual;
-    private static final double histeresis = 0.15;
-    private boolean n[] = new boolean[touchPins];
+    private float positions[] = new float[GameHandler.numTouchPins];
     private Texture animal_texture;
-
+    private float currentPos;
     private int key[] = {
             NUM_0,
             NUM_1,
@@ -36,14 +33,13 @@ public class Animal {
             NUM_7,
             NUM_8,
     };
-
     public Animal (int x, int y, float speed) {
         float positionSet = 0;
         this.x = x;
         this.y = y;
         this.speed = speed;
         animal_texture = new Texture("Animals/cutiehamster.png");
-        //Each position has a step of 7.5 units
+        //Each position has a step of 7.5 units when we have a length of 8 positions
         for(int i = 0; i < positions.length; i++) {
             positionSet += ((float) (maxLim - minLim) / positions.length);
             positions[i] = positionSet;
@@ -52,24 +48,23 @@ public class Animal {
     }
     public void render(final SpriteBatch batch){
         batch.draw(animal_texture, x, y, 5, 15);
-        posactual = y;
+        currentPos = y;
 
-        for(int i = 0; i < touchPins; i++) {
+        for(int i = 0; i < GameHandler.numTouchPins; i++) {
             if(Gdx.input.isKeyPressed(key[i])) {
-                n[i] = true;
-                for(int j = 0; j < touchPins; j++) {
+                GameHandler.touchPins[i] = true;
+                for(int j = 0; j < GameHandler.numTouchPins; j++) {
                     if(j != i)
-                        n[j] = false;
+                        GameHandler.touchPins[j] = false;
                 }
             }
-
         }
 
-        for(int i = 0; i < touchPins; i++) {
-            if(n[i]) {
-                if(posactual > positions[i]+histeresis)
+        for(int i = 0; i < GameHandler.numTouchPins; i++) {
+            if(GameHandler.touchPins[i]) {
+                if(currentPos > positions[i]+GameHandler.animHysteresis)
                     y -= Gdx.graphics.getDeltaTime()*speed;
-                else if(posactual < positions[i]-histeresis)
+                else if(currentPos < positions[i]-GameHandler.animHysteresis)
                     y += Gdx.graphics.getDeltaTime()*speed;
             }
         }
