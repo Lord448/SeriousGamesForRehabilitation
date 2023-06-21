@@ -12,7 +12,7 @@ public class Background {
     private Texture dynamicBackground;
     private Texture[] staticBackgrounds;
     /*TIMING*/
-    private float backgroundOffsets = 0;
+    private float backgroundOffsets;
     private float scrollingSpeed;
 
     Background(){
@@ -35,11 +35,12 @@ public class Background {
     }
 
     public void renderDynamicBackground(float deltaTime, final SpriteBatch batch){
-        backgroundOffsets += deltaTime * scrollingSpeed / 32;
-        if(backgroundOffsets > WORLD_WIDTH){
+        backgroundOffsets += deltaTime * scrollingSpeed / 16;
+        if( backgroundOffsets > WORLD_WIDTH){
             backgroundOffsets = 0;
         }
         batch.draw(dynamicBackground, -backgroundOffsets, 0, WORLD_WIDTH, WORLD_HEIGHT);
+        batch.draw(dynamicBackground, -backgroundOffsets + WORLD_WIDTH, 0 , WORLD_WIDTH, WORLD_HEIGHT);
     }
     public void renderStaticBackground(final SpriteBatch batch){
         batch.draw(staticBackgrounds[0],0, 0, WORLD_WIDTH, WORLD_HEIGHT);

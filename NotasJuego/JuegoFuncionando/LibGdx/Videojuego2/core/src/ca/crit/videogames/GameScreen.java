@@ -15,13 +15,11 @@ public class GameScreen implements Screen {
     private Viewport viewport;
     private SpriteBatch batch;
     private Background background;
-    private Gasoline gasoline;
     private Rocket rocket;
 
     GameScreen(){
         background = new Background();
-        gasoline = new Gasoline(93, 1);
-        rocket = new Rocket(background.getWORLD_WIDTH()/2, 2, 70);
+        rocket = new Rocket(background.getWORLD_WIDTH()/2, 2, 65);
         batch = new SpriteBatch();
         camera = new OrthographicCamera();
         viewport = new StretchViewport(background.getWORLD_WIDTH(), background.getWORLD_HEIGHT(), camera);
@@ -37,7 +35,6 @@ public class GameScreen implements Screen {
     batch.begin();
         background.renderDynamicBackground(deltaTime, batch);
         background.renderStaticBackground(batch);
-        gasoline.render(deltaTime,batch);
         rocket.render(deltaTime,batch);
     batch.end();
     }

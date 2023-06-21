@@ -18,7 +18,6 @@ public class Gasoline {
     private TextureRegion[] fillMovement;
     private Texture imageBar, gasStation;
     private boolean filled = false;
-    private boolean flag = false;
     private float Time, pastTime;
 
     public Gasoline(int x, int y){
@@ -37,10 +36,7 @@ public class Gasoline {
     public void render(float deltaTime, final SpriteBatch batch){
         batch.draw(gasStation, x, y, GAS_WIDTH, GAS_HEIGHT);
         Time += deltaTime;
-        if(Gdx.input.isKeyJustPressed(UP)) {
-
-            filled = !filled;
-        }
+        filled = Gdx.input.isKeyPressed(UP);
         if(Time >= (pastTime+TiempoAnimacionCompleta / 16)){
             pastTime = Time;
 
@@ -54,15 +50,13 @@ public class Gasoline {
             iterator = 15;
         }
         if(iterator == 15){
-            flag = true;
             iterator = 0;
         }
         batch.draw(fillMovement[iterator], x, y+(GAS_HEIGHT), BAR_WIDTH, BAR_HEIGHT);
-        System.out.println(flag);
     }
 
-    public boolean isFlag() {
-        return flag;
+    public int getIterator() {
+        return iterator;
     }
 
     private void fillMovement(TextureRegion[][] temporal) {
