@@ -14,7 +14,7 @@
 #include <BLEUtils.h>
 #include <BLE2902.h>
 
-#define SERVER_NAME "UART Service"
+#define SERVER_NAME "Ladder"
 #define LED_PIN 2
 #define DEFAULT_THRESHOLD 60
 
@@ -119,6 +119,7 @@ enum action{
 }action;
 
 void sendData(char *buffer, BLECharacteristic *pTXCharacteristic);
+void sendStringData(char *buffer, BLECharacteristic *pTXCharacteristic);
 
 const uint32_t promValues = 1000;
 uint32_t touchVals[promValues];
@@ -159,21 +160,22 @@ class MyCallbacks: public BLECharacteristicCallbacks {
         if (rxValue.length() > 0) {
             Serial.print("Received Value: ");
             for (int i = 0; i < rxValue.length(); i++)
-            Serial.print(rxValue[i]);
+                Serial.print(rxValue[i]);
+            Serial.print("\n");
             if(rxValue.compare(bleRxStrings.doCalibration) == 0) {
                 action = doCalibrate;
                 Serial.println(bleSend.doCalReceived);
-                sendData(bleSend.doCalReceived, pTxCharacteristic);
+                sendStringData(bleSend.doCalReceived, pTxCharacteristic);
             }
             else if(rxValue.compare(bleRxStrings.startCalibration) == 0) {
                 bleFlags.start = true;
                 Serial.println(bleSend.startCal);
-                sendData(bleSend.startCal, pTxCharacteristic);
+                sendStringData(bleSend.startCal, pTxCharacteristic);
             }
             else if(rxValue.compare(bleRxStrings.interruptCalibration) == 0) {
                 bleFlags.interrupt = true;
                 Serial.println(bleSend.isrCal);
-                sendData(bleSend.isrCal, pTxCharacteristic);
+                sendStringData(bleSend.isrCal, pTxCharacteristic);
             }
             else if(rxValue.compare(bleRxStrings.confirmThresValue) == 0) {
                 bleFlags.confirm = true;
@@ -236,9 +238,10 @@ void setup() {
 
 void loop() {
     if (deviceConnected) {
-        if(digitalRead(LED_PIN) == 0)
+        if(digitalRead(LED_PIN) == 0) { 
             digitalWrite(LED_PIN, 1);
-
+        }
+            
         switch(action)
         {
             case normalRutine:
@@ -252,7 +255,8 @@ void loop() {
                     if(touchRead(touchGPIO[i]) < threshold) { //User takes pin
                         if(!wasTouched[i]) {
                             sprintf(Buffer, "T%d", touchPins[i]);
-                            sendData(Buffer, pTxCharacteristic);
+                            sendStringData(Buffer, pTxCharacteristic);
+                            Serial.println(Buffer);
                             wasTouched[i] = true;
                         }
                     }
@@ -264,7 +268,7 @@ void loop() {
                             #ifdef CALIBRATION_MODE_BT
                                 static char pinval[25];
                                 sprintf(pinval, "Pin: %d, Value: %d \n", touchPins[i], touchRead(touchGPIO[i]));
-                                sendData(pinval, pTxCharacteristic);
+                                sendStringData(pinval, pTxCharacteristic);
                             #endif // SEND_TO_BT
                     #endif // ENABLE_CALIBRATION
                 }  
@@ -282,38 +286,38 @@ void loop() {
                 else if(bleFlags.start) {
                     for(uint32_t i = 0; i < promValues; i++) {
                         touchVals[i] = touchRead(touchGPIO[0]);
-                        sendData(bleSend.dataTakenFinished, pTxCharacteristic);
+                        sendStringData(bleSend.dataTakenFinished, pTxCharacteristic);
                     }
                     for(uint32_t i = 0; i < promValues; i++)
                         sume += touchVals[i];
                     average = sume/promValues;
                     Serial.printf("Avg: %2.2f", average);
                     sprintf(bleSend.valueToSend, "%d", (uint32_t) average);
-                    sendData(bleSend.valueToSend, pTxCharacteristic);
+                    sendStringData(bleSend.valueToSend, pTxCharacteristic);
 
                     for(uint32_t i = 0; bleFlags.confirm; i++) {
                         if(i == 1)
-                            sendData(bleSend.requestConfirm, pTxCharacteristic);
+                            sendStringData(bleSend.requestConfirm, pTxCharacteristic);
                     }
 
                     if(bleFlags.confirm) {
                         threshold = (uint32_t) average;
                         action = normalRutine;
-                        sendData(bleSend.dataSet, pTxCharacteristic);
+                        sendStringData(bleSend.dataSet, pTxCharacteristic);
                         Serial.println("Value confirmed");
                     }
 
                     else if(bleFlags.denied) {
                         for(uint32_t i = 0; bleFlags.undo || bleFlags.restart; i++) {
                             if(i == 1)
-                                sendData(bleSend.deniedRequest, pTxCharacteristic);
+                                sendStringData(bleSend.deniedRequest, pTxCharacteristic);
                         }
                         if(bleFlags.undo) {
                             action = normalRutine;
-                            sendData(bleSend.undoCal, pTxCharacteristic);
+                            sendStringData(bleSend.undoCal, pTxCharacteristic);
                         }
                         else if(bleFlags.restart) {
-                            sendData(bleSend.restartCal, pTxCharacteristic);
+                            sendStringData(bleSend.restartCal, pTxCharacteristic);
                         }
                         else {
                             Serial.println("Data not handled");
@@ -346,7 +350,7 @@ void loop() {
 }
 
 /**
- * @brief Using pointer all the structure is cleaned by 
+ * @brief Using pointer, all the structure is cleaned by 
  *        setting the flags to false
  */
 void resetFlags(void) {
@@ -359,6 +363,18 @@ void resetFlags(void) {
 
 /**
  * @brief Send data to the desired BLE characteristic in UTF-8
+ * @note  a string finisher is sent at the end of the transmit
+ * @param buffer String data to send 
+ * @param pTXCharacteristic Characteristic that will be modified
+ */
+void sendStringData(char *buffer, BLECharacteristic *pTXCharacteristic) {
+    pTXCharacteristic -> setValue((uint8_t *)buffer, strlen(buffer));
+    pTXCharacteristic -> notify();
+    delay(10); // bluetooth stack will go into congestion, if too many packets are sent, 10ms min
+}
+
+/**
+ * @brief Send data char by char to the desired BLE characteristic in UTF-8
  * @note  a string finisher is sent at the end of the transmit
  * @param buffer String data to send 
  * @param pTXCharacteristic Characteristic that will be modified
