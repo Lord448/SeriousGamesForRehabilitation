@@ -39,10 +39,12 @@ public class Gasoline {
         if(!GameHandler.stageReached) {
             if (Gdx.input.isKeyPressed(UP))
                 GameHandler.filled = true;
+            else
+                GameHandler.filled = false;
             if (Time >= (pastTime + TiempoAnimacionCompleta / 16)) {
                 pastTime = Time;
 
-                if (GameHandler.filled) {
+                if (GameHandler.filled || GameHandler.btFilled) {
                     iterator++;
                 } else {
                     iterator--;
