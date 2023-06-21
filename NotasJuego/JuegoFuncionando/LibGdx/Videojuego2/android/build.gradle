@@ -19,7 +19,7 @@ android {
     }
     defaultConfig {
         applicationId "ca.crit.videogames"
-        minSdkVersion 14
+        minSdkVersion 19
         targetSdkVersion 33
         versionCode 1
         versionName "1.0"
@@ -87,3 +87,7 @@ task run(type: Exec) {
 }
 
 eclipse.project.name = appName + "-android"
+
+dependencies {
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+}

@@ -1,7 +1,6 @@
-package ca.grasley.spaceshooter;
+package ca.crit.videogames;
 
 import android.annotation.SuppressLint;
-import android.annotation.TargetApi;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
