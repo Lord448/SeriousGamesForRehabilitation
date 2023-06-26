@@ -34,8 +34,8 @@ public class Rocket {
 
         gasoline = new Gasoline(93, 1);
         /*CARGAR IMÁGENES*/
-        island = new Texture(Gdx.files.internal("island.png"));
-        land = new Texture(Gdx.files.internal("plataforma.png"));
+        island = new Texture(Gdx.files.internal("Tilesets/island.png"));
+        land = new Texture(Gdx.files.internal("Tilesets/plataforma.png"));
         rocket = new Texture[2];
         rocket[0] = new Texture(Gdx.files.internal("Rocket/rocket_off.png"));
         rocket[1] = new Texture(Gdx.files.internal("Rocket/rocket_on.png"));

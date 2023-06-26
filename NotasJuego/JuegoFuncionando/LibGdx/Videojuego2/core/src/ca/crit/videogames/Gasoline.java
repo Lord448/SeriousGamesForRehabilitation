@@ -24,8 +24,8 @@ public class Gasoline {
         this.x = x;
         this.y = y;
 
-        gasStation = new Texture(Gdx.files.internal("gas_station.png"));
-        imageBar = new Texture(Gdx.files.internal("fillBar.png"));
+        gasStation = new Texture(Gdx.files.internal("Objects/gas_station.png"));
+        imageBar = new Texture(Gdx.files.internal("Objects/fillBar.png"));
         TextureRegion [][] tmp = TextureRegion.split(imageBar, imageBar.getWidth()/4, imageBar.getHeight()/4);
 
         fillMovement(tmp);
