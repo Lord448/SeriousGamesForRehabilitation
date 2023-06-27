@@ -1,5 +1,6 @@
 package ca.crit.videogames;
 
+import static com.badlogic.gdx.Input.Keys.RIGHT;
 import static com.badlogic.gdx.Input.Keys.UP;
 
 import com.badlogic.gdx.Game;
@@ -10,58 +11,56 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 
 public class Gasoline {
-    private int x, y, iterator;
+    private int x, y;
     /*CONSTANTES RÁPIDAS*/
     private static final int BAR_WIDTH = 15, BAR_HEIGHT= 6; //tamaño del objeto barra
     private static final int GAS_WIDTH = BAR_WIDTH, GAS_HEIGHT = 20; //tamaño del objeto estacion de gas
-    private static final float TiempoAnimacionCompleta = 3; //en segundos
+    /*VARIABLES*/
+    private float holdingAirTime; //en segundos
+    private float Time, pastTime;
     /*BARRA Y GASOLINA*/
     private TextureRegion[] fillMovement;
     private Texture imageBar, gasStation;
-    private float Time, pastTime;
 
-    public Gasoline(int x, int y){
+    public Gasoline(int x, int y, float holdingAirTime){
         this.x = x;
         this.y = y;
+        this.holdingAirTime = holdingAirTime;
 
-        gasStation = new Texture(Gdx.files.internal("Objects/gas_station.png"));
-        imageBar = new Texture(Gdx.files.internal("Objects/fillBar.png"));
+        gasStation = new Texture(Gdx.files.internal("Gasoline/gas_station.png"));
+        imageBar = new Texture(Gdx.files.internal("Gasoline/fillBar.png"));
         TextureRegion [][] tmp = TextureRegion.split(imageBar, imageBar.getWidth()/4, imageBar.getHeight()/4);
 
         fillMovement(tmp);
+        GameHandler.iterator = 0;
         Time = 0f;
-        iterator = 0;
         pastTime = 0;
     }
     public void render(float deltaTime, final SpriteBatch batch){
         batch.draw(gasStation, x, y, GAS_WIDTH, GAS_HEIGHT);
         Time += deltaTime;
         if(!GameHandler.stageReached) {
-            if (Gdx.input.isKeyPressed(UP))
+            if (GameHandler.offset <= GameHandler.distance + 2 && GameHandler.offset >= GameHandler.distance - 2)
                 GameHandler.filled = true;
             else
                 GameHandler.filled = false;
-            if (Time >= (pastTime + TiempoAnimacionCompleta / 16)) {
+            if (Time >= (pastTime + holdingAirTime / 16)) {
                 pastTime = Time;
 
                 if (GameHandler.filled || GameHandler.btFilled) {
-                    iterator++;
+                    GameHandler.iterator++;
                 } else {
-                    iterator--;
+                    GameHandler.iterator = 0;
                 }
             }
-            if (iterator < 0) {
-                iterator = 15;
+            if (GameHandler.iterator < 0) {
+                GameHandler.iterator = 15;
             }
-            if (iterator == 15) {
-                iterator = 0;
+            if (GameHandler.iterator == 15) {
+                GameHandler.iterator = 0;
             }
-            batch.draw(fillMovement[iterator], x, y + (GAS_HEIGHT), BAR_WIDTH, BAR_HEIGHT);
+            batch.draw(fillMovement[GameHandler.iterator], x, y + (GAS_HEIGHT), BAR_WIDTH, BAR_HEIGHT);
         }
-    }
-
-    public int getIterator() {
-        return iterator;
     }
 
     private void fillMovement(TextureRegion[][] temporal) {
