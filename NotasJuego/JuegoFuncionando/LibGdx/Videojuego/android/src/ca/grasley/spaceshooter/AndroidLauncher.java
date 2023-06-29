@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.backends.android.AndroidApplication;
 import com.badlogic.gdx.backends.android.AndroidApplicationConfiguration;
@@ -26,16 +27,9 @@ public class AndroidLauncher extends AndroidApplication {
 	private RojoBLE rojoTX, rojoRX;
 	private String strValue;
 
-	private static final String strReceptions[] = new String[8];
-
 	@Override
 	protected void onCreate (Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-
-		for(int i = 0; i < strReceptions.length; i++) {
-			strReceptions[i] = "T"+i;
-			Log.i(TAG, strReceptions[i]);
-		}
 
 		if(!RojoBLE.checkBLESupport(this, bluetoothAdapter)) {
 			Toast.makeText(getApplicationContext(), "Your device doesn't support bluetooth", Toast.LENGTH_LONG).show();
@@ -59,12 +53,14 @@ public class AndroidLauncher extends AndroidApplication {
 	public void onCharacteristicNotificationListener(byte[] value) {
 		strValue = new String(value, StandardCharsets.UTF_8);
 		Log.i(TAG, "Received: " + strValue);
-		for(int i = 0; i < strReceptions.length; i++) {
-			if(strValue.toLowerCase().trim().equals(strReceptions[i].toLowerCase().trim())) {
+		for(int i = 0; i <= GameHandler.numTouchPins; i++) {
+			if(strValue.toLowerCase().trim().equals(GameHandler.strReceptions[i].toLowerCase().trim())) {
 				GameHandler.touchPins[i] = true;
+				GameHandler.wizardSpell = true;
 				for(int j = 0; j < GameHandler.numTouchPins; j++) {
-					if(j != i)
+					if(j != i) {
 						GameHandler.touchPins[j] = false;
+					}
 				}
 				return;
 			}
