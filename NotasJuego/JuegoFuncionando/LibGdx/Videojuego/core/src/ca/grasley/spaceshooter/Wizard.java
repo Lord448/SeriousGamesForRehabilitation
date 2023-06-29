@@ -5,6 +5,7 @@ import static com.badlogic.gdx.Input.Keys.NUM_2;
 import static com.badlogic.gdx.Input.Keys.NUM_3;
 import static com.badlogic.gdx.Input.Keys.NUM_4;
 
+import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
@@ -18,7 +19,6 @@ public class Wizard {
     private static final float spellingSpeed = 1/8f;
     private static final float wizardWitdh = 20, wizardHeight = 40;
     public int x, y;
-    private boolean spelling = false;
     public Animation spellingAnimation;
     public Animation idleAnimation;
     private float spellingTime, time;
@@ -45,20 +45,20 @@ public class Wizard {
         time = 0f;
     }
     public void render(final SpriteBatch batch) {
-
-        if(Gdx.input.isKeyPressed(NUM_1) || Gdx.input.isKeyPressed(NUM_2)|| Gdx.input.isKeyPressed(NUM_3)|| Gdx.input.isKeyPressed(NUM_4)){
-            spelling = true;
+        for(int i = 0; i < GameHandler.key.length; i++) {
+            if(Gdx.input.isKeyPressed(GameHandler.key[i]))
+                GameHandler.wizardSpell = true;
         }
-        if(spelling == true) {
+        if(GameHandler.wizardSpell) {
             spellingTime += Gdx.graphics.getDeltaTime();
             currentSpelling_Frame = (TextureRegion) spellingAnimation.getKeyFrame(spellingTime, true);
             batch.draw(currentSpelling_Frame, x, y, wizardWitdh, wizardHeight);
             if (spellingTime >= spellingSpeed*4) {
-                spelling = false;
+                GameHandler.wizardSpell = false;
                 spellingTime = 0;
             }
         }
-        if(spelling == false){
+        else {
             time += Gdx.graphics.getDeltaTime();
             currentIdle_Frame = (TextureRegion) idleAnimation.getKeyFrame(time, true);
             batch.draw(currentIdle_Frame, x, y, wizardWitdh, wizardHeight);

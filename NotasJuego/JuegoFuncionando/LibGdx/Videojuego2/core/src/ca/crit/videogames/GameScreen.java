@@ -16,13 +16,18 @@ public class GameScreen implements Screen {
     private SpriteBatch batch;
     private Background background;
     private Rocket rocket;
+    private Gasoline gasoline;
+    private AirPosition airPosition;
 
     GameScreen(){
         background = new Background();
-        rocket = new Rocket(background.getWORLD_WIDTH()/2, 2, 65);
         batch = new SpriteBatch();
         camera = new OrthographicCamera();
         viewport = new StretchViewport(background.getWORLD_WIDTH(), background.getWORLD_HEIGHT(), camera);
+        rocket = new Rocket(background.getWORLD_WIDTH()/2, 2, 65);
+        /*VARIABLES AL GUSTO*/
+        gasoline = new Gasoline(93, 1, 3); //tiempo de aire sostenido en segundos
+        airPosition = new AirPosition(93, 27, 2); //distancia en cm a llegar soplando de la regla
     }
 
     @Override
@@ -36,6 +41,8 @@ public class GameScreen implements Screen {
         background.renderDynamicBackground(deltaTime, batch);
         background.renderStaticBackground(batch);
         rocket.render(deltaTime,batch);
+        gasoline.render(deltaTime, batch);
+        airPosition.render(deltaTime, batch);
     batch.end();
     }
 
