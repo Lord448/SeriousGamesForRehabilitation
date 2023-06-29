@@ -40,13 +40,9 @@ public class Gasoline {
         batch.draw(gasStation, x, y, GAS_WIDTH, GAS_HEIGHT);
         Time += deltaTime;
         if(!GameHandler.stageReached) {
-            if (GameHandler.offset <= GameHandler.distance + 2 && GameHandler.offset >= GameHandler.distance - 2)
-                GameHandler.filled = true;
-            else
-                GameHandler.filled = false;
+            GameHandler.filled = GameHandler.offset <= GameHandler.distance + 2 && GameHandler.offset >= GameHandler.distance - 2;
             if (Time >= (pastTime + holdingAirTime / 16)) {
                 pastTime = Time;
-
                 if (GameHandler.filled || GameHandler.btFilled) {
                     GameHandler.iterator++;
                 } else {
