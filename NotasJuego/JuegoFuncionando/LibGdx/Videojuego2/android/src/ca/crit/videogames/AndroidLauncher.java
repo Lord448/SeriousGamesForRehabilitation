@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.badlogic.gdx.Game;
 import com.badlogic.gdx.backends.android.AndroidApplication;
 import com.badlogic.gdx.backends.android.AndroidApplicationConfiguration;
 
@@ -26,6 +27,10 @@ public class AndroidLauncher extends AndroidApplication {
 	private RojoBLE rojoTX, rojoRX;
 	private String strValue;
 	private boolean start_transmit = false;
+	//Data coming from the sensor
+	private int maxValue = 390, minValue = 40;
+	private double pastOffset, prepareOffset;
+	private double animHysteresis = 0.4;
 
 	@Override
 	protected void onCreate (Bundle savedInstanceState) {
@@ -59,6 +64,14 @@ public class AndroidLauncher extends AndroidApplication {
 		Log.i(TAG, "Received: " + strValue);
 		if(start_transmit) {
 			int numValue = Integer.parseInt(strValue.toLowerCase().trim());
+			if(numValue < maxValue && numValue > minValue) {
+				prepareOffset = (0.105*numValue)+22;
+				if(prepareOffset > pastOffset + animHysteresis || prepareOffset < pastOffset - animHysteresis) {
+					GameHandler.offset = prepareOffset;
+					Log.i(TAG, "Offset Val " + GameHandler.offset);
+				}
+				pastOffset = prepareOffset;
+			}
 			if(numValue >= minLim && numValue <= maxLim) {
 				GameHandler.btFilled = true;
 				Log.i(TAG, "Entre");

@@ -93,6 +93,7 @@ class MyCallbacks: public BLECharacteristicCallbacks {
                     RxBuffer[i] = rxValue[i];
 
             }
+            /*
             if(minFill) {
                 minLim = std::stoi(RxBuffer);
                 Serial.printf("New value of min: %d", minLim);
@@ -102,6 +103,8 @@ class MyCallbacks: public BLECharacteristicCallbacks {
                 maxLim = std::stoi(RxBuffer);
                 Serial.printf("New value of max: %d", maxLim);
             }
+
+            */
             if(rxValue.compare("TRY") == 0) {
                 sendStringData("GLOK", pTxCharacteristic);
             }
@@ -173,8 +176,10 @@ void loop() {
         }
         #else
         Serial.println(distance);
-        sprintf(buffer, "%d", distance);
-        sendStringData(buffer, pTxCharacteristic);
+        if(distance < 390) {
+          sprintf(buffer, "%d", distance);
+          sendStringData(buffer, pTxCharacteristic);
+        }
         #endif
     }
     // disconnecting
