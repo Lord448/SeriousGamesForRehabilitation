@@ -1,22 +1,14 @@
 package ca.grasley.spaceshooter;
 
-import static com.badlogic.gdx.Input.Keys.NUM_0;
-import static com.badlogic.gdx.Input.Keys.NUM_1;
-import static com.badlogic.gdx.Input.Keys.NUM_2;
-import static com.badlogic.gdx.Input.Keys.NUM_3;
-import static com.badlogic.gdx.Input.Keys.NUM_4;
-import static com.badlogic.gdx.Input.Keys.NUM_5;
-import static com.badlogic.gdx.Input.Keys.NUM_6;
-import static com.badlogic.gdx.Input.Keys.NUM_7;
-import static com.badlogic.gdx.Input.Keys.NUM_8;
-
-import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 
 public class Animal {
-    private final int maxLim = 100, minLim = 20;
+    /*CONSTANTES RÁPIDAS*/
+    private static final int MAX_LIM = 70, MIN_LIM = 20;
+    private static final int ANIMAL_WITDH = 9, ANIMAL_HEIGHT = 10;
+
     private float x, y;
     private float speed;
     private float[] positions = new float[GameHandler.numTouchPins];
@@ -30,13 +22,13 @@ public class Animal {
         animal_texture = new Texture("Animals/cutiehamster.png");
         //Each position has a step of 7.5 units when we have a length of 8 positions
         for(int i = 0; i < positions.length; i++) {
-            positionSet += ((float) (maxLim - minLim) / positions.length);
+            positionSet += ((float) (MAX_LIM - MIN_LIM) / positions.length);
             positions[i] = positionSet;
             System.out.println(positions[i]);
         }
     }
     public void render(final SpriteBatch batch){
-        batch.draw(animal_texture, x, y, 5, 15);
+        batch.draw(animal_texture, x, y, ANIMAL_WITDH, ANIMAL_HEIGHT);
         currentPos = y;
 
         for(int i = 0; i < GameHandler.numTouchPins; i++) {

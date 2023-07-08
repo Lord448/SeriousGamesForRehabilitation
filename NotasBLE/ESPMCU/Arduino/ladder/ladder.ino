@@ -16,7 +16,7 @@
 
 #define SERVER_NAME "Ladder"
 #define LED_PIN 2
-#define DEFAULT_THRESHOLD 60
+#define DEFAULT_THRESHOLD 35
 
 //This symbol disables the touch sensor checkout and prepare the raw data to calibrate the threshold via serial monitor
 //#define CALIBRATION_MODE
