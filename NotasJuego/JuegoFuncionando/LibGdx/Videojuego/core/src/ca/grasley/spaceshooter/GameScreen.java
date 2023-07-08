@@ -26,14 +26,14 @@ public class GameScreen implements Screen {
     GameScreen(){
         /*SCREEN*/
         camera = new OrthographicCamera();
-        viewport = new StretchViewport(GameHandler.WORLD_WITDH, GameHandler.WORLD_HEIGTH, camera);
+        viewport = new StretchViewport(GameHandler.WORLD_WIDTH, GameHandler.WORLD_HEIGHT, camera);
         /*GRAPHICS*/
         background = new Background();
         treeHouse = new Texture("Background/tree_house.png");
         batch = new SpriteBatch();
         /*CHARACTERS*/
-        wizard = new Wizard(50 , 2);
-        animal = new Animal(GameHandler.WORLD_WITDH/2 + 34, 2, 30);
+        wizard = new Wizard(GameHandler.WORLD_WIDTH/2 - 25 , 2, 26, 25, 1/10f);
+        animal = new Animal(GameHandler.WORLD_WIDTH/2+8, 2, 7, 10, 107, 20, 30);
     }
     @Override
     public void show() {
@@ -47,7 +47,7 @@ public class GameScreen implements Screen {
             background.renderDynamicBackground(deltaTime, batch);
             background.renderStaticBackground(batch);
             /*OBJECTS*/
-            batch.draw(treeHouse, (float)GameHandler.WORLD_WITDH/2 + 18, 0, 40, GameHandler.WORLD_HEIGTH+20);
+            batch.draw(treeHouse, GameHandler.WORLD_WIDTH/2 - 27, 0, GameHandler.WORLD_WIDTH, GameHandler.WORLD_HEIGHT+30);
             /*CHARACTERS*/
             wizard.render(batch);
             animal.render(batch);

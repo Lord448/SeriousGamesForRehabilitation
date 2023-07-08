@@ -25,28 +25,25 @@ public class Background {
         staticBackgrounds[4] = new Texture("Background/layer4_tree1.png");
         staticBackgrounds[5] = new Texture("Background/layer5_grasp.png");
 
-        scrollingSpeed =(float)(GameHandler.WORLD_WITDH/4);
+        scrollingSpeed =(float)(GameHandler.WORLD_WIDTH/4);
     }
 
     public void renderDynamicBackground(float deltaTime, final SpriteBatch batch) {
-        backgroundOffsets [0] += deltaTime * scrollingSpeed / 64;
-        backgroundOffsets [1] += deltaTime * scrollingSpeed / 32;
 
-        for(int layer = 0 ; layer < backgroundOffsets.length ; layer++){
-            if(backgroundOffsets[layer] > GameHandler.WORLD_WITDH){
-                backgroundOffsets[layer] = 0;
-            }
-            batch.draw(dynamicBackgrounds[layer], -backgroundOffsets[layer], 0, GameHandler.WORLD_WITDH, GameHandler.WORLD_HEIGTH);
-            batch.draw(dynamicBackgrounds[layer], -backgroundOffsets[layer]+ GameHandler.WORLD_WITDH, 0 , GameHandler.WORLD_HEIGTH, GameHandler.WORLD_HEIGTH);
+        backgroundOffsets [1]+= deltaTime * scrollingSpeed / 16;
+        if( backgroundOffsets[1] > GameHandler.WORLD_WIDTH){
+            backgroundOffsets [1]= 0;
         }
+        batch.draw(dynamicBackgrounds[0], 0, 0, GameHandler.WORLD_WIDTH, GameHandler.WORLD_HEIGHT);
+        batch.draw(dynamicBackgrounds[1], -backgroundOffsets [1], GameHandler.WORLD_HEIGHT/2, GameHandler.WORLD_WIDTH, GameHandler.WORLD_HEIGHT/2);
+        batch.draw(dynamicBackgrounds[1], -backgroundOffsets [1] + GameHandler.WORLD_WIDTH, GameHandler.WORLD_HEIGHT/2 , GameHandler.WORLD_WIDTH, GameHandler.WORLD_HEIGHT/2);
     }
     public void renderStaticBackground(final SpriteBatch batch){
-        batch.draw(staticBackgrounds[0],0, 0, GameHandler.WORLD_WITDH, GameHandler.WORLD_HEIGTH);
-        batch.draw(staticBackgrounds[1],0, 0, GameHandler.WORLD_WITDH, GameHandler.WORLD_HEIGTH);
-        batch.draw(staticBackgrounds[2],0, 0, GameHandler.WORLD_WITDH, GameHandler.WORLD_HEIGTH);
-        batch.draw(staticBackgrounds[3],-28, 0, GameHandler.WORLD_WITDH, GameHandler.WORLD_HEIGTH);
-        batch.draw(staticBackgrounds[4],-12, 0, GameHandler.WORLD_WITDH, GameHandler.WORLD_HEIGTH);
-        batch.draw(staticBackgrounds[5],0, 0, GameHandler.WORLD_WITDH, GameHandler.WORLD_HEIGTH);
+        batch.draw(staticBackgrounds[0],0, 0, GameHandler.WORLD_WIDTH*2, GameHandler.WORLD_HEIGHT);
+        batch.draw(staticBackgrounds[1],0, 0, GameHandler.WORLD_WIDTH*2, GameHandler.WORLD_HEIGHT);
+        batch.draw(staticBackgrounds[2],0, 0, GameHandler.WORLD_WIDTH*2, GameHandler.WORLD_HEIGHT);
+        batch.draw(staticBackgrounds[3],-43, 0, GameHandler.WORLD_WIDTH*2, GameHandler.WORLD_HEIGHT);
+        batch.draw(staticBackgrounds[5],-30, 0, GameHandler.WORLD_WIDTH*2, GameHandler.WORLD_HEIGHT);
     }
 
 }

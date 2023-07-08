@@ -7,9 +7,8 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 
 public class Wizard {
-    /*CONSTANTES RÁPIDAS*/
-    private static final float spellingSpeed = 1/10f;
-    private static final float WIZARD_WITDH = 26, WIZARD_HEIGHT = 25;
+    private int width, height;
+    private float spellingSpeed;
     public int x, y;
     /*ANIMATION*/
     private Animation spellingAnimation;
@@ -22,9 +21,12 @@ public class Wizard {
     private TextureRegion currentSpelling_Frame;
     private TextureRegion currentIdle_Frame;
 
-    public Wizard(int x, int y){
+    public Wizard(int x, int y, int width, int height, float spellingSpeed){
         this.x = x;
         this.y = y;
+        this.spellingSpeed = spellingSpeed;
+        this.width = width;
+        this.height = height;
 
         /*Cargar la img*/
         image = new Texture(Gdx.files.internal("Wizard/wizard.png"));
@@ -46,7 +48,7 @@ public class Wizard {
         if(GameHandler.wizardSpell) {
             spellingTime += Gdx.graphics.getDeltaTime();
             currentSpelling_Frame = (TextureRegion) spellingAnimation.getKeyFrame(spellingTime, true);
-            batch.draw(currentSpelling_Frame, x, y, WIZARD_WITDH, WIZARD_HEIGHT);
+            batch.draw(currentSpelling_Frame, x, y, width, height);
             if (spellingTime >= spellingSpeed*4) {
                 GameHandler.wizardSpell = false;
                 spellingTime = 0;
@@ -55,7 +57,7 @@ public class Wizard {
         else {
             time += Gdx.graphics.getDeltaTime();
             currentIdle_Frame = (TextureRegion) idleAnimation.getKeyFrame(time, true);
-            batch.draw(currentIdle_Frame, x, y, WIZARD_WITDH, WIZARD_HEIGHT);
+            batch.draw(currentIdle_Frame, x, y, width, height);
         }
     }
     private void spellingMovement(TextureRegion [][] temporal){

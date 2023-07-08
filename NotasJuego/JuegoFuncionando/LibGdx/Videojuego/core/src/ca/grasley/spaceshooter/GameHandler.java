@@ -14,8 +14,8 @@ import static com.badlogic.gdx.Input.Keys.NUM_9;
 public class GameHandler {
     public static final int numTouchPins = 9;
     public static final double animHysteresis = 0.30;
-    public static int WORLD_WITDH = 128;
-    public static int WORLD_HEIGTH = 72;
+    public static int WORLD_WIDTH = 72;
+    public static int WORLD_HEIGHT = 128;
 
     public static boolean[] touchPins = new boolean[numTouchPins];
     public static boolean wizardSpell  = false;
