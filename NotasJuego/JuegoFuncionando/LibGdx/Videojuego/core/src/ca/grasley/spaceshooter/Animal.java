@@ -23,7 +23,7 @@ public class Animal {
         for(int i = 0; i < positions.length; i++) {
             positionSet += ((float) (max_lim - min_lim) / positions.length);
             positions[i] = positionSet;
-            System.out.println(positions[i]);
+            GameHandler.foodPositions[i] = positions[i];
         }
     }
     public void render(final SpriteBatch batch){
@@ -34,18 +34,29 @@ public class Animal {
             if(Gdx.input.isKeyPressed(GameHandler.key[i])) {
                 GameHandler.touchPins[i] = true;
                 for(int j = 0; j < GameHandler.numTouchPins; j++) {
-                    if(j != i)
+                    if(j != i){
                         GameHandler.touchPins[j] = false;
+                    }
                 }
             }
         }
 
         for(int i = 0; i < GameHandler.numTouchPins; i++) {
             if(GameHandler.touchPins[i]) {
-                if(currentPos > positions[i]+GameHandler.animHysteresis)
+                if(currentPos > positions[i]+GameHandler.animHysteresis){
                     y -= Gdx.graphics.getDeltaTime()*speed;
-                else if(currentPos < positions[i]-GameHandler.animHysteresis)
+                    if(y <= GameHandler.foodPositions[i] + 1){
+                        System.out.println("llego");
+                        GameHandler.foodCaught = true;
+                    }
+                }
+                else if(currentPos < positions[i]-GameHandler.animHysteresis){
                     y += Gdx.graphics.getDeltaTime()*speed;
+                    if(y >= GameHandler.foodPositions[i] - 1){
+                        System.out.println("llego");
+                        GameHandler.foodCaught = true;
+                    }
+                }
             }
         }
     }

@@ -16,6 +16,9 @@ public class GameHandler {
     public static final double animHysteresis = 0.30;
     public static int WORLD_WIDTH = 72;
     public static int WORLD_HEIGHT = 128;
+    public static float [] foodPositions = new float[numTouchPins];
+    public static float [] animalPositions = new float[numTouchPins];
+    public static boolean foodCaught = false;
 
     public static boolean[] touchPins = new boolean[numTouchPins];
     public static boolean wizardSpell  = false;

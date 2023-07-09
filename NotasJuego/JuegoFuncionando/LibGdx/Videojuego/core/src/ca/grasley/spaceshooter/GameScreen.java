@@ -16,12 +16,15 @@ public class GameScreen implements Screen {
 
     /*GRAPHICS*/
     private final SpriteBatch batch;
-    private final Texture treeHouse;
     private final Background background;
 
     /*CHARACTER*/
     private final Wizard wizard;
     private final Animal animal;
+
+    /*OBJECTS*/
+    private final Texture treeHouse;
+    private final Food food;
 
     GameScreen(){
         /*SCREEN*/
@@ -30,10 +33,11 @@ public class GameScreen implements Screen {
         /*GRAPHICS*/
         background = new Background();
         treeHouse = new Texture("Background/tree_house.png");
+        food = new Food(GameHandler.WORLD_WIDTH/2+8, 9, 7, 7);
         batch = new SpriteBatch();
         /*CHARACTERS*/
-        wizard = new Wizard(GameHandler.WORLD_WIDTH/2 - 25 , 2, 26, 25, 1/10f);
-        animal = new Animal(GameHandler.WORLD_WIDTH/2+8, 2, 7, 10, 107, 20, 30);
+        wizard = new Wizard(GameHandler.WORLD_WIDTH/2 - 25 , 0, 26, 25, 1/10f);
+        animal = new Animal(GameHandler.WORLD_WIDTH/2+8, 0, 7, 10, 110, 20, 30);
     }
     @Override
     public void show() {
@@ -47,7 +51,8 @@ public class GameScreen implements Screen {
             background.renderDynamicBackground(deltaTime, batch);
             background.renderStaticBackground(batch);
             /*OBJECTS*/
-            batch.draw(treeHouse, GameHandler.WORLD_WIDTH/2 - 27, 0, GameHandler.WORLD_WIDTH, GameHandler.WORLD_HEIGHT+30);
+            batch.draw(treeHouse, GameHandler.WORLD_WIDTH/2 - 27, 0, GameHandler.WORLD_WIDTH, GameHandler.WORLD_HEIGHT+35);
+            food.render(batch);
             /*CHARACTERS*/
             wizard.render(batch);
             animal.render(batch);
