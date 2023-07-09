@@ -4,7 +4,6 @@ import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.viewport.StretchViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
@@ -12,48 +11,29 @@ import com.badlogic.gdx.utils.viewport.Viewport;
 public class GameScreen implements Screen {
 
     /*SCREEN*/
-    private Camera camera;
-    private Viewport viewport;
-    /*GRAPHICS*/
-    private SpriteBatch batch;
-    private Texture[] backgrounds;
-    private Texture[] staticbackgrounds;
-    private Texture treeHouse;
-    /*TIMING*/
-    private float[] backgroundOffsets = {0,0};
-    private float backgroundMaxScrollingSpeed;
+    private final Camera camera;
+    private final Viewport viewport;
 
-    /*WORLD PARAMETERS*/
-    private final int WORLD_WIDHT = 72;
-    private final int WORLD_HEIGHT = 128;
+    /*GRAPHICS*/
+    private final SpriteBatch batch;
+    private final Texture treeHouse;
+    private final Background background;
 
     /*CHARACTER*/
-    private Wizard wizard;
-    private Animal animal;
+    private final Wizard wizard;
+    private final Animal animal;
 
     GameScreen(){
-
+        /*SCREEN*/
         camera = new OrthographicCamera();
-        viewport = new StretchViewport(WORLD_WIDHT, WORLD_HEIGHT, camera);
-        batch = new SpriteBatch();
-
-        backgrounds = new Texture[4];
-        backgrounds [0] = new Texture("Background/layer_sky.png");
-        backgrounds [1] = new Texture("Background/layer_clouds.png");
-
-        staticbackgrounds = new Texture[6];
-        staticbackgrounds[0] = new Texture("Background/layer0_grasp.png");
-        staticbackgrounds[1] = new Texture("Background/layer1_grasp.png");
-        staticbackgrounds[2] = new Texture("Background/layer2_grasp.png");
-        staticbackgrounds[3] = new Texture("Background/layer3_tree0.png");
-        staticbackgrounds[4] = new Texture("Background/layer4_tree1.png");
-        staticbackgrounds[5] = new Texture("Background/layer5_grasp.png");
+        viewport = new StretchViewport(GameHandler.WORLD_WIDTH, GameHandler.WORLD_HEIGHT, camera);
+        /*GRAPHICS*/
+        background = new Background();
         treeHouse = new Texture("Background/tree_house.png");
-
-        backgroundMaxScrollingSpeed = (float)(WORLD_HEIGHT)/4;
-        /*Characters*/
-        wizard = new Wizard(15 , 5);
-        animal = new Animal(55, 5, 30);
+        batch = new SpriteBatch();
+        /*CHARACTERS*/
+        wizard = new Wizard(GameHandler.WORLD_WIDTH/2 - 25 , 2, 26, 25, 1/10f);
+        animal = new Animal(GameHandler.WORLD_WIDTH/2+8, 2, 7, 10, 107, 20, 30);
     }
     @Override
     public void show() {
@@ -63,35 +43,15 @@ public class GameScreen implements Screen {
     @Override
     public void render(float deltaTime) {
         batch.begin();
-            /*SCROLLING BACKGROUND*/
-            renderDynamicBackground(deltaTime);
-            renderStaticBackground();
-
-            batch.draw(treeHouse, 45, 0, 25, WORLD_HEIGHT+20);
+            /*BACKGROUND*/
+            background.renderDynamicBackground(deltaTime, batch);
+            background.renderStaticBackground(batch);
+            /*OBJECTS*/
+            batch.draw(treeHouse, GameHandler.WORLD_WIDTH/2 - 27, 0, GameHandler.WORLD_WIDTH, GameHandler.WORLD_HEIGHT+30);
+            /*CHARACTERS*/
             wizard.render(batch);
             animal.render(batch);
         batch.end();
-    }
-
-    private void renderDynamicBackground(float deltaTime) {
-        backgroundOffsets [0] += deltaTime * backgroundMaxScrollingSpeed / 64;
-        backgroundOffsets [1] += deltaTime * backgroundMaxScrollingSpeed / 32;
-
-        for(int layer = 0 ; layer < backgroundOffsets.length ; layer++){
-            if(backgroundOffsets[layer] > WORLD_WIDHT){
-                backgroundOffsets[layer] = 0;
-            }
-            batch.draw(backgrounds[layer], -backgroundOffsets[layer], 0, WORLD_WIDHT, WORLD_HEIGHT);
-            batch.draw(backgrounds[layer], -backgroundOffsets[layer]+ WORLD_WIDHT, 0 , WORLD_WIDHT, WORLD_HEIGHT);
-        }
-    }
-    public void renderStaticBackground(){
-        batch.draw(staticbackgrounds[0],0, 0, WORLD_WIDHT, WORLD_HEIGHT);
-        batch.draw(staticbackgrounds[1],0, 0, WORLD_WIDHT, WORLD_HEIGHT);
-        batch.draw(staticbackgrounds[2],0, 0, WORLD_WIDHT, WORLD_HEIGHT);
-        batch.draw(staticbackgrounds[3],-20, 0, WORLD_WIDHT, WORLD_HEIGHT);
-        batch.draw(staticbackgrounds[4],-7, 0, WORLD_WIDHT, WORLD_HEIGHT);
-        batch.draw(staticbackgrounds[5],0, 0, WORLD_WIDHT, WORLD_HEIGHT);
     }
 
     @Override
