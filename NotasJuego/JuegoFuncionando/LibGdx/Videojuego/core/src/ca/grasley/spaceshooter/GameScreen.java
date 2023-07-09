@@ -25,6 +25,8 @@ public class GameScreen implements Screen {
     /*OBJECTS*/
     private final Texture treeHouse;
     private final Food food;
+    private final Food[] fruits = new Food[GameHandler.numberOfFruits];
+    private final FoodStack foodStack;
 
     GameScreen(){
         /*SCREEN*/
@@ -33,7 +35,22 @@ public class GameScreen implements Screen {
         /*GRAPHICS*/
         background = new Background();
         treeHouse = new Texture("Background/tree_house.png");
-        food = new Food(GameHandler.WORLD_WIDTH/2+8, 9, 7, 7);
+        for(int i = 0; i < fruits.length; i++) {
+            fruits[i] = new Food(GameHandler.WORLD_WIDTH / 2 + 8, 9, 7, 7, i, true);
+            fruits[i].disappear();
+        }
+        /*
+        int i = 0;
+        for(Food fruit : fruits) { //--Problem here
+            if(i == GameHandler.numberOfFruits)
+                break;
+            fruit = new Food(GameHandler.WORLD_WIDTH / 2 + 8, 9, 7, 7, i, true);
+            i++;
+        }
+
+         */
+        food = new Food(GameHandler.WORLD_WIDTH/2+8, 9, 7, 7, Food.BANANA, true);
+        foodStack = new FoodStack(GameHandler.WORLD_WIDTH/2+10, 0, 7, 7);
         batch = new SpriteBatch();
         /*CHARACTERS*/
         wizard = new Wizard(GameHandler.WORLD_WIDTH/2 - 25 , 0, 26, 25, 1/10f);
@@ -52,7 +69,11 @@ public class GameScreen implements Screen {
             background.renderStaticBackground(batch);
             /*OBJECTS*/
             batch.draw(treeHouse, GameHandler.WORLD_WIDTH/2 - 27, 0, GameHandler.WORLD_WIDTH, GameHandler.WORLD_HEIGHT+35);
+            for(Food fruit : fruits) {
+                fruit.render(batch);
+            }
             food.render(batch);
+            foodStack.render(batch);
             /*CHARACTERS*/
             wizard.render(batch);
             animal.render(batch);
