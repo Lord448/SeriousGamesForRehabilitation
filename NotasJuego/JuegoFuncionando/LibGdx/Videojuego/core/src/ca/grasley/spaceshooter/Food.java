@@ -47,11 +47,13 @@ public class Food {
     }
 
     public void render(final SpriteBatch batch) {
+        /*
+        if(isCarriable)
+            System.out.println("bool appear " + hasToAppear + " fruit " + fruit);
+         */
         if(GameHandler.foodCarrying && isCarriable && hasToAppear)
             batch.draw(food[fruit], x, GameHandler.AnimalY, width, height);
-        else
-            batch.draw(food[fruit], x, -10, width, height);
-        if(!isCarriable)
+        else if(!isCarriable)
             batch.draw(food[fruit], x, y, width, height);
     }
     

@@ -1,5 +1,6 @@
 package ca.grasley.spaceshooter;
 
+import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.OrthographicCamera;
@@ -24,9 +25,8 @@ public class GameScreen implements Screen {
 
     /*OBJECTS*/
     private final Texture treeHouse;
-    private final Food food;
     private final Food[] fruits = new Food[GameHandler.numberOfFruits];
-    private final FoodStack foodStack;
+    private final FoodStack upperFoodStack, lowerFoodStack;
 
     GameScreen(){
         /*SCREEN*/
@@ -39,18 +39,8 @@ public class GameScreen implements Screen {
             fruits[i] = new Food(GameHandler.WORLD_WIDTH / 2 + 8, 9, 7, 7, i, true);
             fruits[i].disappear();
         }
-        /*
-        int i = 0;
-        for(Food fruit : fruits) { //--Problem here
-            if(i == GameHandler.numberOfFruits)
-                break;
-            fruit = new Food(GameHandler.WORLD_WIDTH / 2 + 8, 9, 7, 7, i, true);
-            i++;
-        }
-
-         */
-        food = new Food(GameHandler.WORLD_WIDTH/2+8, 9, 7, 7, Food.BANANA, true);
-        foodStack = new FoodStack(GameHandler.WORLD_WIDTH/2+10, 0, 7, 7);
+        lowerFoodStack = new FoodStack(GameHandler.WORLD_WIDTH/2+10, 0, 7, 7, FoodStack.LOWER);
+        upperFoodStack = new FoodStack(GameHandler.WORLD_WIDTH/2+10, 90, 7, 7, FoodStack.UPPER);
         batch = new SpriteBatch();
         /*CHARACTERS*/
         wizard = new Wizard(GameHandler.WORLD_WIDTH/2 - 25 , 0, 26, 25, 1/10f);
@@ -64,16 +54,28 @@ public class GameScreen implements Screen {
     @Override
     public void render(float deltaTime) {
         batch.begin();
+            if(GameHandler.foodCarrying) {
+                fruits[GameHandler.currentFruit].appear();
+                System.out.println(GameHandler.currentFruit);
+                for(int i = 0; i < fruits.length; i++) {
+                    if(i == GameHandler.currentFruit)
+                        continue;
+                    fruits[i].disappear();
+                }
+            }
+            else if(GameHandler.foodDelivered) {
+                fruits[GameHandler.currentFruit].disappear();
+                System.out.println("Entre");
+            }
             /*BACKGROUND*/
             background.renderDynamicBackground(deltaTime, batch);
             background.renderStaticBackground(batch);
             /*OBJECTS*/
             batch.draw(treeHouse, GameHandler.WORLD_WIDTH/2 - 27, 0, GameHandler.WORLD_WIDTH, GameHandler.WORLD_HEIGHT+35);
-            for(Food fruit : fruits) {
+            for(Food fruit : fruits)
                 fruit.render(batch);
-            }
-            food.render(batch);
-            foodStack.render(batch);
+            upperFoodStack.render(batch);
+            lowerFoodStack.render(batch);
             /*CHARACTERS*/
             wizard.render(batch);
             animal.render(batch);

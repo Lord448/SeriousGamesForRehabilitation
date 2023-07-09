@@ -21,7 +21,7 @@ public class GameHandler {
     public static boolean foodPicked = false;
     public static boolean foodDelivered = false;
 
-    public static int currentFruit = Food.BANANA;
+    public static int currentFruit = Food.STRAWBERRY;
     public static boolean[] touchPins = new boolean[numTouchPins];
     public static boolean wizardSpell  = false;
     public static final int[] key = {
