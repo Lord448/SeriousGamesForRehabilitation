@@ -56,17 +56,14 @@ public class GameScreen implements Screen {
         batch.begin();
             if(GameHandler.foodCarrying) {
                 fruits[GameHandler.currentFruit].appear();
-                System.out.println(GameHandler.currentFruit);
                 for(int i = 0; i < fruits.length; i++) {
                     if(i == GameHandler.currentFruit)
                         continue;
                     fruits[i].disappear();
                 }
             }
-            else if(GameHandler.foodDelivered) {
+            else if(GameHandler.foodDelivered)
                 fruits[GameHandler.currentFruit].disappear();
-                System.out.println("Entre");
-            }
             /*BACKGROUND*/
             background.renderDynamicBackground(deltaTime, batch);
             background.renderStaticBackground(batch);
