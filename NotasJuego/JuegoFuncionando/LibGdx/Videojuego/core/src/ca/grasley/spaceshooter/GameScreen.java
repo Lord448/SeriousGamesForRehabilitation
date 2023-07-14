@@ -23,6 +23,8 @@ public class GameScreen implements Screen {
     private final Wizard wizard;
     private final Animal animal;
 
+    private final Food food;
+
     GameScreen(){
         /*SCREEN*/
         camera = new OrthographicCamera();
@@ -34,6 +36,8 @@ public class GameScreen implements Screen {
         /*CHARACTERS*/
         wizard = new Wizard(GameHandler.WORLD_WIDTH/2 - 25 , 2, 26, 25, 1/10f);
         animal = new Animal(GameHandler.WORLD_WIDTH/2+8, 2, 7, 10, 107, 20, 30);
+
+        food = new Food(30, 30, 5, 5);
     }
     @Override
     public void show() {
@@ -51,6 +55,8 @@ public class GameScreen implements Screen {
             /*CHARACTERS*/
             wizard.render(batch);
             animal.render(batch);
+
+            food.render(batch);
         batch.end();
     }
 

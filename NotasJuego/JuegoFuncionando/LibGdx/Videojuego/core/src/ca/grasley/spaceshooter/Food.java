@@ -2,6 +2,7 @@ package ca.grasley.spaceshooter;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 
 public class Food {
@@ -9,7 +10,6 @@ public class Food {
     private int x, y;
 
     private TextureRegion[] food;
-    private TextureRegion currentFood;
     private Texture image;
 
     public Food(int x, int y, int width, int height){
@@ -24,11 +24,18 @@ public class Food {
         int j = 0, i = 0;
         for(int w = 0; w< food.length; w++){
             food[w] = tmp [j][i];
-            if(i >= 3){
-                i = 0;
-                j++;
-            }
             i++;
+            if(i >= 4){
+                j++;
+                i = 0;
+            }
         }
+    }
+    public void render(final SpriteBatch batch){
+        batch.draw(food[7], x, y, width, height);
+    }
+
+    private void foodStack(final SpriteBatch batch){
+
     }
 }
