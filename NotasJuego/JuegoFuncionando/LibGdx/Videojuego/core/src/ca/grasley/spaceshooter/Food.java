@@ -1,5 +1,15 @@
 package ca.grasley.spaceshooter;
 
+import static com.badlogic.gdx.Input.Keys.NUM_0;
+import static com.badlogic.gdx.Input.Keys.NUM_2;
+import static com.badlogic.gdx.Input.Keys.NUM_3;
+import static com.badlogic.gdx.Input.Keys.NUM_4;
+import static com.badlogic.gdx.Input.Keys.NUM_5;
+import static com.badlogic.gdx.Input.Keys.NUM_6;
+import static com.badlogic.gdx.Input.Keys.NUM_7;
+import static com.badlogic.gdx.Input.Keys.NUM_8;
+import static com.badlogic.gdx.Input.Keys.NUM_9;
+
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -7,14 +17,13 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 
 public class Food {
     private int width, height;
-    private int x, y;
+    private int x;
 
     private TextureRegion[] food;
     private Texture image;
 
-    public Food(int x, int y, int width, int height){
+    public Food(int x, int width, int height){
         this.x = x;
-        this.y = y;
         this.width = width;
         this.height = height;
 
@@ -32,10 +41,24 @@ public class Food {
         }
     }
     public void render(final SpriteBatch batch){
-        batch.draw(food[7], x, y, width, height);
+
+        if(GameHandler.foodPicked == false){
+            foodStack(batch);
+        }else{
+            foodCollected(batch);
+        }
     }
 
     private void foodStack(final SpriteBatch batch){
-
+        for(int i=0; i< food.length; i++){
+            if(GameHandler.animalPositions[i] != GameHandler.foodPositions[i]){
+                batch.draw(food[i], x, GameHandler.foodPositions[i], width, height);
+            }
+        }
+    }
+    private void foodCollected(final SpriteBatch batch){
+        for(int i = food.length-1; i>GameHandler.counter; i--) {
+            batch.draw(food[i], x, GameHandler.foodPositions[i], width, height);
+        }
     }
 }
