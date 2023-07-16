@@ -19,8 +19,7 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 public class Food {
     private int width, height;
     private int x;
-    private int collectedFood_Y = 0, collectedFood_X = 60, top_pos = 0;
-
+    private int collectedFood_X = 57, collectedFood_Y = 87;
     private TextureRegion[] food;
     private Texture image;
 
@@ -59,13 +58,28 @@ public class Food {
         }
     }
     private void foodCollected(final SpriteBatch batch){
+        /*DIBUJAR EN LA SUBIDA DEL ÁRBOL*/
         for(int i = food.length-1; i>GameHandler.counter; i--) {
             batch.draw(food[i], x, GameHandler.foodPositions[i], width, height);
         }
+
+        /*CREANDO POSICIONES DESIGNADAS EN LA CASA DEL ÁRBOL PARA DIBUJAR AHÍ LAS FRUTAS*/
+        int z = 0;
+        int[] topFood_Y = new int[8], topFood_X = new int[8];
+        for(int axisY = 0 ; axisY < 4 ; axisY ++){
+            for(int axisX = 0; axisX < 2 ; axisX ++){
+                topFood_X [z] = axisX;
+                topFood_Y [z]= axisY;
+                z++;
+            }
+        }
+
+        /*DIBUJANDO LAS FRUTAS RECOGIDAS EN LAS POSICIONES DESIGNADAS*/
         for(int i = 0; i< GameHandler.counter; i++){
-            //collectedFood_X = 50 + (i * width);
-            collectedFood_Y = 82 + (i * height);
-            batch.draw(food[i], collectedFood_X, collectedFood_Y, width, height);
+            batch.draw(food[i],
+                    collectedFood_X + (width * topFood_X[i]),
+                    (int)(collectedFood_Y + (1.4* height * topFood_Y[i])),
+                       width, height);
         }
     }
 }
