@@ -1,5 +1,6 @@
 package ca.grasley.spaceshooter;
 
+import static com.badlogic.gdx.Input.Keys.G;
 import static com.badlogic.gdx.Input.Keys.NUM_0;
 import static com.badlogic.gdx.Input.Keys.NUM_2;
 import static com.badlogic.gdx.Input.Keys.NUM_3;
@@ -18,6 +19,7 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 public class Food {
     private int width, height;
     private int x;
+    private int collectedFood_Y = 0, collectedFood_X = 60, top_pos = 0;
 
     private TextureRegion[] food;
     private Texture image;
@@ -59,6 +61,11 @@ public class Food {
     private void foodCollected(final SpriteBatch batch){
         for(int i = food.length-1; i>GameHandler.counter; i--) {
             batch.draw(food[i], x, GameHandler.foodPositions[i], width, height);
+        }
+        for(int i = 0; i< GameHandler.counter; i++){
+            //collectedFood_X = 50 + (i * width);
+            collectedFood_Y = 82 + (i * height);
+            batch.draw(food[i], collectedFood_X, collectedFood_Y, width, height);
         }
     }
 }
