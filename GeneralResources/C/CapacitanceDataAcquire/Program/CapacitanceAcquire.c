@@ -36,6 +36,7 @@
 
 #define ToLowerCase(x) x+32
 #define ToUpperCase(x) x-32
+#define toInt(x) x-0x30
 
 typedef enum bool {
     false,
@@ -75,9 +76,10 @@ struct persons
 
 
 void setInitialValues(FILE *configFile);
+bool strIsEmpty(char *string);
 
 char *optarg;
-bool runTest = false;
+bool runTest = false, infoGet = true;
 int numberSamples, numberReps;
 
 int main(int argc, char *const *argv)
@@ -85,9 +87,7 @@ int main(int argc, char *const *argv)
     FILE *users, *config;
     char portname[50] = "", baudrate[50] = "";
     char fileBuffer[50] = "";
-    int opt;
-    int fd;
-    int wlen;
+    int opt, fd;
     
     config = fopen("config.log", "r");
     if(config == NULL) {
@@ -130,13 +130,13 @@ int main(int argc, char *const *argv)
                 scanf("%s", person.height);
                 printf("Weight in kg: ");
                 scanf("%s", person.weight);
-                fprintf(users, "Name: %s, Height: %sm, Weight: %sKg \n", person.name, person.height, person.weight);
-                fclose(users);
+                fprintf(users, "Name: %s, Height: %sm, Weight: %sKg\n", person.name, person.height, person.weight);
                 printf("The user has been registered\n");
                 printf("Do you want to do the test? ");
                 scanf("%s", confirm);
                 if(confirm[0] == 's' || confirm[0] == 'y' || confirm[0] == 'S' || confirm[0] == 'Y')
                     runTest = true;
+                fclose(users);
             break;
             case 'd':
                 //@todo
@@ -183,22 +183,154 @@ int main(int argc, char *const *argv)
     }
 
     if(runTest) {
-        /*
-        @todo
-        Search for the information of the person
-        Connect to the serial port
-        Receive the number of samples and the number of reps
-        Receive all the data
-        Reorganize the data base
-        */
+        char personsBuffer[100] = "";
+        char nameSearching[50] = "";
 
-        printf("Running test");
+        //Search for the information of the person
+        if(!flags.n || strIsEmpty(person.name) || strIsEmpty(person.height) || strIsEmpty(person.weight)) {
+            int lastCharOfName, lastCharOfHeight;
+            users = fopen("persons.txt", "r");
+            if(users == NULL) {
+                printf("Could not open the file: persons.txt");
+                exit(-1);
+            }
+            while(infoGet) {
+                fgets(personsBuffer, 100, users);
+                if(personsBuffer[0] == 'N') {
+                    //Searching in all the list of the names
+                    for(int i = 0; i < strlen(personsBuffer); i++) {
+                        if(personsBuffer[i] == ',') {
+                            //fill the name on the person
+                            for(int j = 6, k = 0; personsBuffer[j] != ','; j++, k++) {
+                                nameSearching[k] = personsBuffer[j];
+                                lastCharOfName = i;
+                            }
+                            break;
+                        }
+                    }
+                    if(strcmp(nameSearching, person.name) == 0) {
+                        //Filling the height and the weight
+                        for(int i = lastCharOfName+1; i < strlen(personsBuffer); i++) {
+                            if(personsBuffer[i] == 'H') {
+                                //Fill the height
+                                for(int j = i+7, k = 0; personsBuffer[j] != ','; j++, k++) {
+                                    person.height[k] = personsBuffer[j];
+                                }
+                                    
+                            }
+                            else if(personsBuffer[i] == 'W') {
+                                //Fill the weight
+                                for(int j = i+7, k = 0; j < strlen(personsBuffer); j++, k++) {
+                                    person.weight[k] = personsBuffer[j];
+                                }
+                                infoGet = false;
+                            }
+                        }
+                        printf("Person founded: %s\nHeight: %s, Weight: %s", person.name, person.height, person.weight);
+                    }
+                }
+            }
+            fclose(users);
+        }
+        //Set up the connection to the serial port
+        fd = open(portname, O_RDWR | O_NOCTTY | O_SYNC);
+        if (fd < 0) {
+            printf("Error opening %s: %s\n", portname, strerror(errno));
+            exit(-1);
+        }
+        set_interface_attribs(fd, B115200); //baudrate 115200, 8 bits, no parity, 1 stop bit
+        //Receive the number of samples and the number of reps
+        bool receivingData = true;
+        int iterator = 0;
+        do {
+            unsigned char buf[80];
+            int rdlen;
+
+            rdlen = read(fd, buf, sizeof(buf) - 1);
+            if (rdlen > 0) {
+                buf[rdlen] = 0;
+                printf("%s", buf);
+                if(dataProcess(buf, &numberReps, &numberSamples))
+                    iterator++;
+                if(iterator == 2)
+                    receivingData = false;
+            } 
+            else if (rdlen < 0) {
+                printf("Error from read: %d: %s\n", rdlen, strerror(errno));
+            } 
+            else {  /* rdlen == 0 */
+                printf("Timeout from read\n");
+            }               
+        } while (receivingData);
+        
+        //Prepare the files
+        FILE *files[numberReps];
+        char *tmpname;
+        for(int i = 0; i < numberReps; i++) {
+            sprintf(tmpname, "tmp%d", i);
+            files[i] = fopen(tmpname, "w");
+            if(files[i] == NULL) {
+                printf("Error trying to create the tmp file\nError: %s", strerror(errno));
+                exit(-1);
+            }
+        }
+        //Receive all the data
+        receivingData = true;
+        //Receive string - 505,\n -
+        for(int i = 0; i < numberReps; i++){
+            //Send the ready message
+            do{
+                //Receive all the data and print into the file
+            }while(receivingData);
+        }
+        //Reorganize the data base
+        
+        printf("Running test\n");
     }
-
     exit(0);
 }
 
 void setInitialValues(FILE *configFile) {
     fprintf(configFile, "Port: %s\n", DEFAULT_PORT);
     fprintf(configFile, "Baud: %s", DEFAULT_BAUDRATE);
+}
+
+bool strIsEmpty(char *string) {
+    if(strcmp(string, "") == 0)
+        return true;
+    else
+        return false;
+}
+
+bool dataProcess(char *string, int *numberReps, int *numberSamps) {
+    if(string[0] == 'R'){
+        if(string[1] == 'e'){
+            if(string[2] == 'p') {
+                if(string[3] == 's'){
+                    for(int i = 5; string[i] != '!'; i++) {
+                        *numberReps *= 10;
+                        *numberReps = toInt(string[i]);
+                    }
+                }
+            }
+        }
+    }
+    else if(string[0] == 'S'){
+        if(string[1] == 'a'){
+            if(string[2] == 'm'){
+                if(string[3] == 'p') {
+                    if(string[4] == 's'){
+                        for(int i = 0; string[i] != '!'; i++) {
+                            *numberSamps = 10;
+                            *numberSamps = toInt(string[i]);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    else {
+        printf("Cannot process the data:\n%s", string);
+        return false;
+    }
 }

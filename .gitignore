@@ -6,3 +6,4 @@ NotasBLE/ESPMCU/Arduino/respirador/build/
 ESPMCU/senseCapacitive/build/
 ESPMCU/senseCapacitive/.vscode/
 GeneralResources/C/.vscode
+GeneralResources/C/CapacitanceDataAcquire/Program/.vscode

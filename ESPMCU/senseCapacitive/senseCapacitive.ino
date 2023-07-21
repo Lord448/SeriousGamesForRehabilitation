@@ -21,7 +21,8 @@ void setup()
 {
     Serial.begin(115200);
     
-    Serial.printf("Reps:%d", NumberOfRepetitions);
+    Serial.printf("Reps:%d!", NumberOfRepetitions);
+    Serial.printf("Samps:%d!", NumberOfSamples);
 
     #ifdef CSV_FORMAT
     for(uint32_t i = 0; i < NumberOfRepetitions; i++) {
