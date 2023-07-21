@@ -133,7 +133,7 @@ uint32_t touchPins[10];
 bool wasTouched[10];
 uint32_t touchGPIO[10] = {
                     4,   //Touch pin 0
-                    0,   //Touch Pin 1
+                    0,   //Touch Pin 1 -- Has some problems
                     2,   //Touch pin 2
                     15,  //Touch pin 3
                     13,  //Touch pin 4
