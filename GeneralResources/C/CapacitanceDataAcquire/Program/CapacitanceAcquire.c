@@ -31,6 +31,10 @@
 #include <ctype.h>
 #include "SerialPort.h"
 
+//#define STAY_SERIAL_RX
+#define SOFTWARE_START
+//#define DEBUG
+
 #define DEFAULT_PORT "/dev/ttyUSB0"
 #define DEFAULT_BAUDRATE "115200"
 
@@ -74,13 +78,33 @@ struct persons
     .weight = ""
 };
 
+struct SerialString{
+    char reset[6];
+    char start[7];
+    char ready[7];
+    char getreps[8];
+    char getsamps[9];
+    char maketest[9];
+}SerialString = {
+    .reset = "reset",
+    .start = "start",
+    .ready = "ready",
+    .getreps = "getreps",
+    .getsamps = "getsamps",
+    .maketest = "maketest"
+};
 
-void setInitialValues(FILE *configFile);
 bool strIsEmpty(char *string);
+bool dataProcess(char *string, int *numberReps, int *numberSamps);
+void setInitialValues(FILE *configFile);
+void receiveData(int fd, char *string);
+void receiveDataUntil(int fd, char *stringToFinish);
+void sendData(int fd, char *string);
+void strclean(char *string);
 
 char *optarg;
 bool runTest = false, infoGet = true;
-int numberSamples, numberReps;
+int numberSamples = 0, numberReps = 0;
 
 int main(int argc, char *const *argv)
 {
@@ -89,10 +113,10 @@ int main(int argc, char *const *argv)
     char fileBuffer[50] = "";
     int opt, fd;
     
-    config = fopen("config.log", "r");
+    config = fopen("data/config.log", "r");
     if(config == NULL) {
         printf("Couldn't open the config file, creating one\n");
-        config = fopen("config.log", "w+");
+        config = fopen("data/config.log", "w+");
         if(config == NULL) {
             printf("Couldn't create the config.log file \n");
             exit(-1);
@@ -102,13 +126,13 @@ int main(int argc, char *const *argv)
 
     fgets(fileBuffer, sizeof(fileBuffer), config);
     if(fileBuffer[0] == 'P') {
-        for(int i = 6, j = 0; i < strlen(fileBuffer); i++, j++) {
+        for(int i = 6, j = 0; fileBuffer[i] != ' '; i++, j++) {
             portname[j] = fileBuffer[i];
         }
     }
     fgets(fileBuffer, sizeof(fileBuffer), config);
     if(fileBuffer[0] == 'B') {
-        for(int i = 6, j = 0; i < strlen(fileBuffer); i++, j++) {
+        for(int i = 6, j = 0; i < (int)strlen(fileBuffer); i++, j++) {
             baudrate[j] = fileBuffer[i];
         }
     }
@@ -117,11 +141,11 @@ int main(int argc, char *const *argv)
         switch(opt) {
             case 'n':
                 flags.n = true;
-                char *confirm;
+                char confirm[10];
 
-                users = fopen("persons.txt", "a");
+                users = fopen("data/persons.txt", "a");
                 if(users == NULL) {
-                    printf("The persons.txt can't be opened");
+                    printf("The persons.txt can't be opened\n");
                     exit(-1);
                 }
                 printf("Name: ");
@@ -189,7 +213,7 @@ int main(int argc, char *const *argv)
         //Search for the information of the person
         if(!flags.n || strIsEmpty(person.name) || strIsEmpty(person.height) || strIsEmpty(person.weight)) {
             int lastCharOfName, lastCharOfHeight;
-            users = fopen("persons.txt", "r");
+            users = fopen("data/persons.txt", "r");
             if(users == NULL) {
                 printf("Could not open the file: persons.txt");
                 exit(-1);
@@ -226,7 +250,7 @@ int main(int argc, char *const *argv)
                                 infoGet = false;
                             }
                         }
-                        printf("Person founded: %s\nHeight: %s, Weight: %s", person.name, person.height, person.weight);
+                        printf("Person founded: %s\nHeight:%s, Weight:%s", person.name, person.height, person.weight);
                     }
                 }
             }
@@ -239,9 +263,35 @@ int main(int argc, char *const *argv)
             exit(-1);
         }
         set_interface_attribs(fd, B115200); //baudrate 115200, 8 bits, no parity, 1 stop bit
+
+        //Wait for get a string of ready
+#ifdef SOFTWARE_START
+            sendData(fd, SerialString.reset);
+            usleep(300*100);
+            tcflush(fd, TCIOFLUSH);
+            printf("Press intro to continue");
+            getchar();
+            sendData(fd, SerialString.ready);
+            receiveDataUntil(fd, SerialString.start);
+#else
+            printf("Waiting to confirm");
+            receiveDataUntil(fd, SerialString.start);
+#endif //!SOFTWARE_START
         //Receive the number of samples and the number of reps
         bool receivingData = true;
-        int iterator = 0;
+        int iterator = 0, wlen;
+        char buffer[50] = "";
+
+        sendData(fd, SerialString.getreps);
+        receiveData(fd, buffer);
+        dataProcess(buffer, &numberReps, &numberSamples);
+        strclean(buffer);
+        sendData(fd, SerialString.getsamps);
+        receiveData(fd, buffer);
+        dataProcess(buffer, &numberReps, &numberSamples);
+        printf("Repetitions: %d, Samples: %d\n", numberReps, numberSamples);
+
+#ifdef STAY_SERIAL_RX
         do {
             unsigned char buf[80];
             int rdlen;
@@ -250,10 +300,6 @@ int main(int argc, char *const *argv)
             if (rdlen > 0) {
                 buf[rdlen] = 0;
                 printf("%s", buf);
-                if(dataProcess(buf, &numberReps, &numberSamples))
-                    iterator++;
-                if(iterator == 2)
-                    receivingData = false;
             } 
             else if (rdlen < 0) {
                 printf("Error from read: %d: %s\n", rdlen, strerror(errno));
@@ -261,38 +307,70 @@ int main(int argc, char *const *argv)
             else {  /* rdlen == 0 */
                 printf("Timeout from read\n");
             }               
-        } while (receivingData);
-        
+        } while (1);
+#endif //!STAY_SERIAL_RX
+
         //Prepare the files
         FILE *files[numberReps];
-        char *tmpname;
+        FILE *finalDataSet;
+        char tmpname[100];
+
         for(int i = 0; i < numberReps; i++) {
-            sprintf(tmpname, "tmp%d", i);
+            sprintf(tmpname, "CapacitanceDataSets/tmp%d.csv", i);
             files[i] = fopen(tmpname, "w");
             if(files[i] == NULL) {
-                printf("Error trying to create the tmp file\nError: %s", strerror(errno));
+                printf("Error trying to create the tmp %d file\nError: %s\n", i, strerror(errno));
                 exit(-1);
             }
         }
-        //Receive all the data
-        receivingData = true;
-        //Receive string - 505,\n -
-        for(int i = 0; i < numberReps; i++){
-            //Send the ready message
-            do{
-                //Receive all the data and print into the file
-            }while(receivingData);
-        }
-        //Reorganize the data base
+
+        //usleep(300*100);
+        //tcflush(fd, TCIOFLUSH);
+        usleep(300*100);
+        sendData(fd, SerialString.maketest);
         
-        printf("Running test\n");
+        char repe[20];
+        for(int i = 0; i < numberReps; i++) {
+            sprintf(repe, "Rep:%d,", i);
+            do{
+                unsigned char buf[2];
+                int rdlen;
+
+                rdlen = read(fd, buf, sizeof(buf) - 1);
+                if(rdlen > 0) {
+                    if(strcmp(buf, repe) == 0) {
+                        printf("Next rep");
+                        break;
+                    }
+                    else {
+                        printf("%s", buf);
+                        fprintf(files[i], "%s", buf);
+                    }
+                }
+                else if (rdlen < 0)
+                {
+                    printf("Error from read: %d: %s\n", rdlen, strerror(errno));
+                }
+                else { /* rdlen == 0 */
+                    printf("Timeout from read");
+                }
+            }while(1);
+        }
+
+        //Reorganize the data base
+
+        //Add number of prooves
+
+        for(int i = 0; i < numberReps; i++)
+            fclose(files[i]);
     }
+    //fclose(config);
     exit(0);
 }
 
 void setInitialValues(FILE *configFile) {
-    fprintf(configFile, "Port: %s\n", DEFAULT_PORT);
-    fprintf(configFile, "Baud: %s", DEFAULT_BAUDRATE);
+    fprintf(configFile, "Port: %s \n", DEFAULT_PORT);
+    fprintf(configFile, "Baud: %s\n", DEFAULT_BAUDRATE);
 }
 
 bool strIsEmpty(char *string) {
@@ -303,14 +381,21 @@ bool strIsEmpty(char *string) {
 }
 
 bool dataProcess(char *string, int *numberReps, int *numberSamps) {
+#ifdef DEBUG
+    printf("Incoming string to process %s\n", string);
+#endif //!DEBUG
     if(string[0] == 'R'){
         if(string[1] == 'e'){
             if(string[2] == 'p') {
                 if(string[3] == 's'){
                     for(int i = 5; string[i] != '!'; i++) {
                         *numberReps *= 10;
-                        *numberReps = toInt(string[i]);
+                        *numberReps += toInt(string[i]);
                     }
+#ifdef DEBUG
+                    printf("Received Reps %d\n", *numberReps);
+#endif //!DEBUG
+                    return true;
                 }
             }
         }
@@ -320,10 +405,14 @@ bool dataProcess(char *string, int *numberReps, int *numberSamps) {
             if(string[2] == 'm'){
                 if(string[3] == 'p') {
                     if(string[4] == 's'){
-                        for(int i = 0; string[i] != '!'; i++) {
-                            *numberSamps = 10;
-                            *numberSamps = toInt(string[i]);
+                        for(int i = 6; string[i] != '!'; i++) {
+                            *numberSamps *= 10;
+                            *numberSamps += toInt(string[i]);
                         }
+#ifdef DEBUG
+                        printf("Received Samps %d\n", *numberSamps);
+#endif //!DEBUG
+                        return true;
                     }
                 }
             }
@@ -332,5 +421,84 @@ bool dataProcess(char *string, int *numberReps, int *numberSamps) {
     else {
         printf("Cannot process the data:\n%s", string);
         return false;
+    }
+    return true;
+}
+
+void receiveData(int fd, char *string) {
+    bool receivingData = true;
+    do {
+        unsigned char buf[80];
+        int rdlen;
+
+        rdlen = read(fd, buf, sizeof(buf) - 1);
+        if (rdlen > 0) {
+            buf[rdlen] = 0;
+#ifdef DEBUG
+            printf("Data res: %s\n", buf);
+#endif //!DEBUG
+            strcpy(string, buf);
+            receivingData = false;
+        } 
+        else if (rdlen < 0) {
+            printf("Error from read: %d: %s\n", rdlen, strerror(errno));
+        } 
+        else {  /* rdlen == 0 */
+            printf("Timeout from read\n");
+        }               
+    } while(receivingData);
+}
+
+void receiveDataUntil(int fd, char *stringToFinish) {
+    bool receivingData = true;
+    bool foundS = false;
+    int sume = 0, counter = 0;
+    do {
+        unsigned char buf[80];
+        int rdlen;
+
+        rdlen = read(fd, buf, sizeof(buf) - 1);
+        if (rdlen > 0) {
+            buf[rdlen] = 0;
+#ifdef DEBUG
+            printf("Data res: %s\n", buf);
+#endif //!DEBUG
+            if(strcmp(buf, stringToFinish) == 0) { //Sume of all chars of start
+                printf("Starting\n");
+                receivingData = false;
+            }
+        } 
+        else if (rdlen < 0) {
+            printf("Error from read: %d: %s\n", rdlen, strerror(errno));
+        } 
+        else {  /* rdlen == 0 */
+            printf("Timeout from read\n");
+        }               
+    } while (receivingData);
+}
+
+void sendData(int fd, char *string) {
+#ifdef DEBUG
+    printf("Sending: %s\n", string);
+#endif //!DEBUG
+    int wlen, len;
+    len = strlen(string);
+    wlen = write(fd, string, len);
+    if(wlen != len) {
+        printf("Error from write: %d, %d\n", wlen, errno);
+    }
+    tcdrain(fd); //delay for output
+}
+
+/**
+ * @brief Cleans the string with the termination character
+ * @note It only cleans till the termination character of the string
+ *       because it uses strlen to calculate the lenght of the string
+ * @param string: String tha will be cleaned
+ */
+void strclean(char *string) {
+    int lenght = strlen(string);
+    for(int i = 0; i < lenght; i++) {
+        string[i] = '\0';
     }
 }
