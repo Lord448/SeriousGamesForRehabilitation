@@ -1,6 +1,7 @@
 package ca.grasley.spaceshooter;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -20,6 +21,8 @@ public class Wizard {
     private Texture image;
     private TextureRegion currentSpelling_Frame;
     private TextureRegion currentIdle_Frame;
+    /*SOUNDS*/
+    private Sound spellSound;
 
     public Wizard(int x, int y, int width, int height, float spellingSpeed){
         this.x = x;
@@ -32,6 +35,9 @@ public class Wizard {
         image = new Texture(Gdx.files.internal("Wizard/wizard.png"));
         TextureRegion [][] tmp = TextureRegion.split(image,image.getWidth()/3, image.getHeight()/4);
 
+        /*Cargar efectos de sonido*/
+        spellSound = Gdx.audio.newSound(Gdx.files.internal("Sounds/Effects/spell.ogg"));
+
         /*Wizard Spelling*/
         spellingMovement(tmp);
         /*Wizard Idle*/
@@ -42,8 +48,11 @@ public class Wizard {
     }
     public void render(final SpriteBatch batch) {
         for(int i = 0; i < GameHandler.key.length; i++) {
-            if(Gdx.input.isKeyPressed(GameHandler.key[i]))
+            if(Gdx.input.isKeyJustPressed(GameHandler.key[i])){
                 GameHandler.wizardSpell = true;
+                sounds();
+            }
+
         }
         if(GameHandler.wizardSpell) {
             spellingTime += Gdx.graphics.getDeltaTime();
@@ -59,6 +68,7 @@ public class Wizard {
             currentIdle_Frame = (TextureRegion) idleAnimation.getKeyFrame(time, true);
             batch.draw(currentIdle_Frame, x, y, width, height);
         }
+
     }
     private void spellingMovement(TextureRegion [][] temporal){
         spellingMovement = new TextureRegion[4];
@@ -83,5 +93,13 @@ public class Wizard {
             }
         }
         idleAnimation = new Animation<>(1/9f, idleMovement);
+    }
+    private void sounds(){
+        long id = spellSound.play(GameHandler.effectsVolume);
+        spellSound.setPitch(id, 1);
+        spellSound.setLooping(id, false);
+    }
+    public void dispose(){
+        spellSound.dispose();
     }
 }

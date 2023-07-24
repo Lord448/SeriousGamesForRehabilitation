@@ -15,6 +15,9 @@ public class GameHandler {
     public static int WORLD_WIDTH = 72;
     public static int WORLD_HEIGHT = 128;
 
+    public static float musicVolume = 0.03f;
+    public static float effectsVolume = musicVolume / 5;
+
     public static final double animHysteresis = 0.30;
     public static boolean wizardSpell  = false;
 

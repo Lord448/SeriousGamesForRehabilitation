@@ -1,7 +1,9 @@
 package ca.grasley.spaceshooter;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 
 public class Animal {
@@ -13,6 +15,8 @@ public class Animal {
     private float currentPos;
     private int currentPin;
     private int nextPin = 0;
+
+    private Sound victorySound;
     public Animal (int x, int y, int width, int height, int max_lim, int min_lim, float speed) {
         float positionSet = 0;
         this.x = x;
@@ -22,6 +26,7 @@ public class Animal {
         this.speed = speed;
         GameHandler.foodSaved = max_lim;
         animal_texture = new Texture("Animals/cutiehamster.png");
+        victorySound = Gdx.audio.newSound(Gdx.files.internal("Sounds/Effects/achievement.ogg"));
         //Each position has a step of 7.5 units when we have a length of 8 positions
         for(int i = 0; i < positions.length; i++) {
             positionSet += ((float) (max_lim - min_lim) / positions.length);
@@ -66,9 +71,23 @@ public class Animal {
                         GameHandler.foodPicked = true;
                         GameHandler.animalPositions[i] = y;
                         GameHandler.counter ++;
+                        if(GameHandler.counter == 8){ //Llegó a la casa
+                            winSound();
+                            System.out.println("Ganaste");
+                        }
                     }
                 }
             }
         }
+    }
+
+    private void winSound() {
+        long id = victorySound.play(GameHandler.musicVolume);
+        victorySound.setPitch(id, 1);
+        victorySound.setLooping(id, false);
+    }
+
+    public void dispose(){
+        victorySound.dispose();
     }
 }
