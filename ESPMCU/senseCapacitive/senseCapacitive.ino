@@ -95,6 +95,7 @@ void makeTest(void) {
             //delay(50);
         }
     }
+    Serial.print("F");
 }
 
 /**

@@ -1,1 +1,5 @@
-Name: Pedro, Height: 1.81m, Weight: 112Kg
+Name: Pedro, Height: 1.81m, Weight: 112Kg, It: 0
+Name: a, Height: 1.81m, Weight: 112Kg, It: 0
+Name: hector, Height: 1.81m, Weight: 112Kg, It: 0
+Name: Andrea, Height: 1.81m, Weight: 112Kg, It: 0
+Name: Hector, Height: 1.80m, Weight: 73Kg, It: 0

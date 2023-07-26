@@ -18,7 +18,7 @@
  * c: clear all (-c)
  * p: port to open (-p /dev/ttyUSB0)
  * b: baudrate (-b 115200)
- * r: register default port (-r /dev/ttyUSB0)
+ * r: register default port (-r /dev/ttyUSB0) 
  * x: execute test: person that will have the test (-x person)
  * j: just register data, cancel closing the program (-j name_of_register)
  *    it creates the data base if it doesn't exists
@@ -29,18 +29,43 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <errno.h>
 #include "SerialPort.h"
 
-//#define STAY_SERIAL_RX
+#define READALL_CHUNK 2097152 //2MiB
+
+/* Size of each input chunk to be
+   read and allocate for. */
+#ifndef  READALL_CHUNK
+#define  READALL_CHUNK  262144
+#endif
+
+#define  READALL_OK          0  /* Success */
+#define  READALL_INVALID    -1  /* Invalid parameters */
+#define  READALL_ERROR      -2  /* Stream error */
+#define  READALL_TOOMUCH    -3  /* Too much input */
+#define  READALL_NOMEM      -4  /* Out of memory */
+
+//Config symbols
+#define MULTITABLE
+#define ONE_TABLE
+
+#define NUMBER_ROWS
+
 #define SOFTWARE_START
+#define DELETE_TMP
+//#define PRINT_DATA
+
+//Debug symbols
 //#define DEBUG
+//#define STAY_SERIAL_RX
 
 #define DEFAULT_PORT "/dev/ttyUSB0"
 #define DEFAULT_BAUDRATE "115200"
 
 #define ToLowerCase(x) x+32
 #define ToUpperCase(x) x-32
-#define toInt(x) x-0x30
+#define ToInt(x) x-0x30
 
 typedef enum bool {
     false,
@@ -72,10 +97,12 @@ struct persons
     char name[50];
     char height[50];
     char weight[50];
+    int iteration;
 }person = {
     .name = "",
     .height = "",
-    .weight = ""
+    .weight = "",
+    .iteration = 0
 };
 
 struct SerialString{
@@ -100,7 +127,9 @@ void setInitialValues(FILE *configFile);
 void receiveData(int fd, char *string);
 void receiveDataUntil(int fd, char *stringToFinish);
 void sendData(int fd, char *string);
+void strinsert(char *dest, const char *src);
 void strclean(char *string);
+int readall(FILE *in, char **dataptr, size_t *sizeptr);
 
 char *optarg;
 bool runTest = false, infoGet = true;
@@ -141,7 +170,6 @@ int main(int argc, char *const *argv)
         switch(opt) {
             case 'n':
                 flags.n = true;
-                char confirm[10];
 
                 users = fopen("data/persons.txt", "a");
                 if(users == NULL) {
@@ -154,12 +182,8 @@ int main(int argc, char *const *argv)
                 scanf("%s", person.height);
                 printf("Weight in kg: ");
                 scanf("%s", person.weight);
-                fprintf(users, "Name: %s, Height: %sm, Weight: %sKg\n", person.name, person.height, person.weight);
+                fprintf(users, "Name: %s, Height: %sm, Weight: %sKg, It: 0\n", person.name, person.height, person.weight);
                 printf("The user has been registered\n");
-                printf("Do you want to do the test? ");
-                scanf("%s", confirm);
-                if(confirm[0] == 's' || confirm[0] == 'y' || confirm[0] == 'S' || confirm[0] == 'Y')
-                    runTest = true;
                 fclose(users);
             break;
             case 'd':
@@ -212,7 +236,7 @@ int main(int argc, char *const *argv)
 
         //Search for the information of the person
         if(!flags.n || strIsEmpty(person.name) || strIsEmpty(person.height) || strIsEmpty(person.weight)) {
-            int lastCharOfName, lastCharOfHeight;
+            int lastCharOfName;
             users = fopen("data/persons.txt", "r");
             if(users == NULL) {
                 printf("Could not open the file: persons.txt");
@@ -233,7 +257,7 @@ int main(int argc, char *const *argv)
                         }
                     }
                     if(strcmp(nameSearching, person.name) == 0) {
-                        //Filling the height and the weight
+                        //Filling the height, the weight and the iterations
                         for(int i = lastCharOfName+1; i < strlen(personsBuffer); i++) {
                             if(personsBuffer[i] == 'H') {
                                 //Fill the height
@@ -248,6 +272,10 @@ int main(int argc, char *const *argv)
                                     person.weight[k] = personsBuffer[j];
                                 }
                                 infoGet = false;
+                            }
+                            else if (personsBuffer[i] == 'I') {
+                                //Fill the iteration
+                                person.iteration = ToInt(personsBuffer[i+4]);
                             }
                         }
                         printf("Person founded: %s\nHeight:%s, Weight:%s", person.name, person.height, person.weight);
@@ -279,7 +307,7 @@ int main(int argc, char *const *argv)
 #endif //!SOFTWARE_START
         //Receive the number of samples and the number of reps
         bool receivingData = true;
-        int iterator = 0, wlen;
+        int wlen;
         char buffer[50] = "";
 
         sendData(fd, SerialString.getreps);
@@ -290,7 +318,7 @@ int main(int argc, char *const *argv)
         receiveData(fd, buffer);
         dataProcess(buffer, &numberReps, &numberSamples);
         printf("Repetitions: %d, Samples: %d\n", numberReps, numberSamples);
-
+        printf("Receiving data...\n");
 #ifdef STAY_SERIAL_RX
         do {
             unsigned char buf[80];
@@ -309,11 +337,9 @@ int main(int argc, char *const *argv)
             }               
         } while (1);
 #endif //!STAY_SERIAL_RX
-
         //Prepare the files
         FILE *files[numberReps];
-        FILE *finalDataSet;
-        char tmpname[100];
+        char tmpname[50];
 
         for(int i = 0; i < numberReps; i++) {
             sprintf(tmpname, "CapacitanceDataSets/tmp%d.csv", i);
@@ -323,63 +349,240 @@ int main(int argc, char *const *argv)
                 exit(-1);
             }
         }
-
-        //usleep(300*100);
-        //tcflush(fd, TCIOFLUSH);
         usleep(300*100);
         sendData(fd, SerialString.maketest);
         
         char repe[20];
+        bool isNotFirst = false;
         for(int i = 0; i < numberReps; i++) {
-            sprintf(repe, "Rep:%d,", i);
+            sprintf(repe, "R%d,", i);
+            if(isNotFirst)
+                fprintf(files[i], "R");
             do{
                 unsigned char buf[2];
                 int rdlen;
-
                 rdlen = read(fd, buf, sizeof(buf) - 1);
                 if(rdlen > 0) {
-                    if(strcmp(buf, repe) == 0) {
-                        printf("Next rep");
+                    if(buf[0] == 'F') //End of transmission
                         break;
+                    if(buf[0] == repe[0]) {
+                        if(isNotFirst) 
+                            break;
+                        isNotFirst = true;
                     }
-                    else {
-                        printf("%s", buf);
-                        fprintf(files[i], "%s", buf);
-                    }
+                #ifdef PRINT_DATA
+                    printf("%s", buf);
+                #endif
+                    fprintf(files[i], "%s", buf);
                 }
                 else if (rdlen < 0)
                 {
                     printf("Error from read: %d: %s\n", rdlen, strerror(errno));
                 }
-                else { /* rdlen == 0 */
+                else { //rdlen == 0 
                     printf("Timeout from read");
                 }
             }while(1);
         }
 
-        //Reorganize the data base
-
-        //Add number of prooves
-
         for(int i = 0; i < numberReps; i++)
             fclose(files[i]);
+        //Reorganize the data base
+
+#if defined(MULTITABLE) && defined(ONE_TABLE)
+    #undef ONE_TABLE //Preprocesor protection
+#endif
+
+#if defined(MULTITABLE) && defined(NUMBER_ROWS)
+        FILE *finalDataSet;
+        char finalBuffer[100000] = "";
+        char nameOfFinalDataSet[100] = "";
+
+        for(int i = 0; i < numberReps; i++) {
+            sprintf(tmpname, "CapacitanceDataSets/tmp%d.csv", i);
+            files[i] = fopen(tmpname, "r");
+            if(files[i] == NULL) {
+                printf("Error trying to create the tmp %d file\nError: %s\n", i, strerror(errno));
+                exit(-1);
+            }
+        }
+        for(int i = 0; i < numberSamples; i++) {
+            char tmp[20] = "", tmpnum[20] = "";
+            char chunk[100] = "";
+            sprintf(tmpnum, "%d, ", i);
+            strcat(chunk, tmpnum);
+            fgets(tmp, 20, files[0]);
+            strcat(chunk, tmp);
+            for(int j = 1; j < numberReps; j++) {
+                fgets(tmp, sizeof(tmp) - 1, files[j]);
+                strinsert(chunk, tmp);
+            }
+            strcat(finalBuffer, chunk);
+            strclean(chunk);
+        }
+        sprintf(nameOfFinalDataSet, "CapacitanceDataSets/%s_%d.csv", person.name, person.iteration);
+        finalDataSet = fopen(nameOfFinalDataSet, "w");
+        if(finalDataSet == NULL) {
+            printf("Error trying to create the final data set file\nError: %s\n", strerror(errno));
+            exit(-1);
+        }
+        //Start printing the info
+        fprintf(finalDataSet, "%s", finalBuffer);
+        fclose(finalDataSet);
+        for(int i = 0; i < numberReps; i++)
+            fclose(files[i]);
+#elif defined(ONE_TABLE) && defined(NUMBER_ROWS)
+        FILE *finalDataSet;
+        char finalBuffer[100000] = "";
+        char nameOfFinalDataSet[100] = "";
+
+        for(int i = 0; i < numberReps; i++) {
+            sprintf(tmpname, "CapacitanceDataSets/tmp%d.csv", i);
+            files[i] = fopen(tmpname, "r");
+            if(files[i] == NULL) {
+                printf("Error trying to create the tmp %d file\nError: %s\n", i, strerror(errno));
+                exit(-1);
+            }
+        }
+        for(int i = 0; i < numberReps; i++) {
+            char tmp[20] = "";
+            for(int j = 0; j < numberSamples; j++) {
+                fgets(tmp, sizeof(tmp) - 1, files[i]);
+                if(tmp[0] == 'R' || tmp[0] == 'F')
+                    continue;
+                strcat(finalBuffer, tmp);
+            }
+        }
+
+        sprintf(nameOfFinalDataSet, "CapacitanceDataSets/%s_%d.csv", person.name, person.iteration);
+        finalDataSet = fopen(nameOfFinalDataSet, "w");
+        if(finalDataSet == NULL) {
+            printf("Error trying to create the final data set file\nError: %s\n", strerror(errno));
+            exit(-1);
+        }
+        //Start printing the info
+        fprintf(finalDataSet, "%s", finalBuffer);
+        fclose(finalDataSet);
+        for(int i = 0; i < numberReps; i++)
+            fclose(files[i]);
+#elif defined(ONE_TABLE)
+        //@todo
+#elif defined(MULTITABLE)
+        //@todo
+        FILE *finalDataSet;
+        char *finalBuffer;
+        char nameOfFinalDataSet[100] = "";
+#elif defined(NUMBER_ROWS)
+        //@todo
+        /*
+        //Build the number rows
+        tmpRows = fopen("CapacitanceDataSets/tmpRows.csv", "w+");
+        if(tmpRows == NULL) {
+            printf("Error trying to create the tmpRows file\nError: %s\n", strerror(errno));
+            exit(-1);
+        }
+        for(int i = 1; i <= numberSamples; i++)
+            fprintf(tmpRows, "%d,\n", i);
+        //Build the multitable
+        for(int i = 0; i < numberSamples; i++) {
+            char tmp[50] = "";
+            char chunk[50] = "";
+            fgets(tmp, sizeof(tmp) -1, tmpRows);
+            strcat(chunk, tmp);
+            for(int j = 0; j < numberReps; j++) {
+                fgets(tmp, sizeof(tmp) - 1, files[j]);
+                strinsert(chunk, tmp);
+            }
+            strcat(finalBuffer, chunk);
+            strclean(chunk);
+        }
+        */
+#endif
+/*
+        //Write the iteration
+        //char dataStream[200] = "";
+        char dataSearch[200] = "";
+        char finalStream[100*100] = "";
+
+        users = fopen("data/persons.txt", "r");
+        if(users == NULL) {
+            printf("The persons.txt can't be opened\nError: %s", strerror(errno));
+            exit(-1);
+        }
+
+        sprintf(dataSearch, "Name: %s, Height: %sm, Weight: %sKg, It: %d\n", person.name, person.height, person.weight, person.iteration);
+        */
+        /*
+        while(feof(users) != 0) { //Search all the file
+            fgets(dataStream, sizeof(dataStream) - 1, users);
+            if(strcmp(dataStream, dataSearch) == 0) {
+                printf("Se encontro");
+                person.iteration++;
+                sprintf(dataSearch, "Name: %s, Height: %sm, Weight: %sKg, It: %d\n", person.name, person.height, person.weight, person.iteration);
+                strcat(finalStream, dataSearch);
+                continue;
+            }
+            strcat(finalStream, dataStream);
+        }
+        */
+        /*
+        char *dataStream = (char *)malloc(10*sizeof(char));
+        readall(users, &dataStream, sizeof(char));
+
+        fclose(users);
+
+        users = fopen("data/persons.txt", "w");
+        if(users == NULL) {
+            printf("The persons.txt can't be opened\nError: %s", strerror(errno));
+            exit(-1);
+        }
+        fprintf(users, "%s", finalStream);
+        fclose(users);
+        */
+#ifdef DELETE_TMP
+        usleep(300*100);
+        for(int i = 0; i < numberReps; i++) {
+            char tmpfile[50] = "";
+            sprintf(tmpfile, "CapacitanceDataSets/tmp%d.csv", i);
+            remove(tmpfile);
+        }
+#endif
     }
     //fclose(config);
+    printf("Done\n");
     exit(0);
 }
-
+/**
+ * @brief Set the Initial Values of the config file
+ * 
+ * @param configFile: pointer to type FILE
+ */
 void setInitialValues(FILE *configFile) {
     fprintf(configFile, "Port: %s \n", DEFAULT_PORT);
     fprintf(configFile, "Baud: %s\n", DEFAULT_BAUDRATE);
 }
-
+/**
+ * @brief Check if the string is empty
+ * 
+ * @param string: string that will be checked
+ * @return true 
+ * @return false 
+ */
 bool strIsEmpty(char *string) {
     if(strcmp(string, "") == 0)
         return true;
     else
         return false;
 }
-
+/**
+ * @brief Process the incoming data of the serial port in order
+ *        to receive the samples and the repetitions
+ * @param string: Incoming data
+ * @param numberReps: variable of reps
+ * @param numberSamps: variable of samps
+ * @return true if the process was succesful
+ * @return false if it does not have success
+ */
 bool dataProcess(char *string, int *numberReps, int *numberSamps) {
 #ifdef DEBUG
     printf("Incoming string to process %s\n", string);
@@ -390,7 +593,7 @@ bool dataProcess(char *string, int *numberReps, int *numberSamps) {
                 if(string[3] == 's'){
                     for(int i = 5; string[i] != '!'; i++) {
                         *numberReps *= 10;
-                        *numberReps += toInt(string[i]);
+                        *numberReps += ToInt(string[i]);
                     }
 #ifdef DEBUG
                     printf("Received Reps %d\n", *numberReps);
@@ -407,7 +610,7 @@ bool dataProcess(char *string, int *numberReps, int *numberSamps) {
                     if(string[4] == 's'){
                         for(int i = 6; string[i] != '!'; i++) {
                             *numberSamps *= 10;
-                            *numberSamps += toInt(string[i]);
+                            *numberSamps += ToInt(string[i]);
                         }
 #ifdef DEBUG
                         printf("Received Samps %d\n", *numberSamps);
@@ -425,6 +628,12 @@ bool dataProcess(char *string, int *numberReps, int *numberSamps) {
     return true;
 }
 
+/**
+ * @brief Receive the data from the serial port
+ * 
+ * @param fd: integer that handle the serial port selected
+ * @param string: string that will contain the buffer (80 chars)
+ */
 void receiveData(int fd, char *string) {
     bool receivingData = true;
     do {
@@ -449,10 +658,14 @@ void receiveData(int fd, char *string) {
     } while(receivingData);
 }
 
+/**
+ * @brief It blocks the program until the specified string is received
+ *        from the serial port
+ * @param fd: integer that handle the serial port selected
+ * @param stringToFinish: string that will unblock the program
+ */
 void receiveDataUntil(int fd, char *stringToFinish) {
     bool receivingData = true;
-    bool foundS = false;
-    int sume = 0, counter = 0;
     do {
         unsigned char buf[80];
         int rdlen;
@@ -477,6 +690,12 @@ void receiveDataUntil(int fd, char *stringToFinish) {
     } while (receivingData);
 }
 
+/**
+ * @brief Send data to the serial port
+ * 
+ * @param fd: integer that handle the serial port selected
+ * @param string: string that will be sended
+ */
 void sendData(int fd, char *string) {
 #ifdef DEBUG
     printf("Sending: %s\n", string);
@@ -491,6 +710,28 @@ void sendData(int fd, char *string) {
 }
 
 /**
+ * @brief It appends the source string into the destinatary string, and all
+ *        the result in saved on the destinatary, all separated by a new line and it also finishes
+ *        when a new line is founded
+ * @note  The new line character is conserved at the end of the string
+ * @param dest: Destinatary string
+ * @param src: Source string
+ */
+void strinsert(char *dest, const char *src) {
+    for(int i = 0; i < strlen(dest); i++) {
+        if(dest[i] == '\n') {
+            //printf("%d", i);
+            for(int j = 0; j < strlen(src); j++) {
+                if(src[j] == '\0')
+                    return;
+                dest[i] = src[j];
+                i++;
+            }
+        }
+    }
+}
+
+/**
  * @brief Cleans the string with the termination character
  * @note It only cleans till the termination character of the string
  *       because it uses strlen to calculate the lenght of the string
@@ -501,4 +742,72 @@ void strclean(char *string) {
     for(int i = 0; i < lenght; i++) {
         string[i] = '\0';
     }
+}
+
+/**
+ * @brief This functions reads a hole file stream and 
+ *        allocates this information on a string
+ * @note The buffer is allocated for one extra char, which is NUL,
+ *       and automatically appended after the data.
+ *       Initial values of (*dataptr) and (*sizeptr) are ignored.
+ * @param in: File stream data
+ * @param dataptr: points to a dynamically allocated buffer
+ * @param sizeptr: chars read from the file
+ * @return one of the READALL_ constants above.
+ */
+int readall(FILE *in, char **dataptr, size_t *sizeptr)
+{
+    char  *data = NULL, *temp;
+    size_t size = 0;
+    size_t used = 0;
+    size_t n;
+
+    /* None of the parameters can be NULL. */
+    if (in == NULL || dataptr == NULL || sizeptr == NULL)
+        return READALL_INVALID;
+    /* A read error already occurred? */
+    if (ferror(in))
+        return READALL_ERROR;
+    while (1) {
+        if (used + READALL_CHUNK + 1 > size) {
+            size = used + READALL_CHUNK + 1;
+
+            /* Overflow check. Some ANSI C compilers
+               may optimize this away, though. */
+            if (size <= used) {
+                free(data);
+                return READALL_TOOMUCH;
+            }
+
+            temp = realloc(data, size);
+            if (temp == NULL) {
+                free(data);
+                return READALL_NOMEM;
+            }
+            data = temp;
+        }
+
+        n = fread(data + used, 1, READALL_CHUNK, in);
+        if (n == 0)
+            break;
+        used += n;
+    }
+
+    if (ferror(in)) {
+        free(data);
+        return READALL_ERROR;
+    }
+
+    temp = realloc(data, used + 1);
+    if (temp == NULL) {
+        free(data);
+        return READALL_NOMEM;
+    }
+    data = temp;
+    data[used] = '\0';
+
+    *dataptr = data;
+    *sizeptr = used;
+
+    return READALL_OK;
 }
