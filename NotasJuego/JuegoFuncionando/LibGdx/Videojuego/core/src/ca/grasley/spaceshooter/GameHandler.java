@@ -1,15 +1,14 @@
 package ca.grasley.spaceshooter;
 
-import static com.badlogic.gdx.Input.Keys.NUM_0;
-import static com.badlogic.gdx.Input.Keys.NUM_1;
-import static com.badlogic.gdx.Input.Keys.NUM_2;
-import static com.badlogic.gdx.Input.Keys.NUM_3;
-import static com.badlogic.gdx.Input.Keys.NUM_4;
-import static com.badlogic.gdx.Input.Keys.NUM_5;
-import static com.badlogic.gdx.Input.Keys.NUM_6;
-import static com.badlogic.gdx.Input.Keys.NUM_7;
-import static com.badlogic.gdx.Input.Keys.NUM_8;
-import static com.badlogic.gdx.Input.Keys.NUM_9;
+import static com.badlogic.gdx.Input.Keys.A;
+import static com.badlogic.gdx.Input.Keys.S;
+import static com.badlogic.gdx.Input.Keys.D;
+import static com.badlogic.gdx.Input.Keys.F;
+import static com.badlogic.gdx.Input.Keys.G;
+import static com.badlogic.gdx.Input.Keys.H;
+import static com.badlogic.gdx.Input.Keys.J;
+import static com.badlogic.gdx.Input.Keys.K;
+import static com.badlogic.gdx.Input.Keys.L;
 
 public class GameHandler {
     public static int WORLD_WIDTH = 72;
@@ -29,15 +28,7 @@ public class GameHandler {
     public static boolean foodPicked = false;
     public static boolean[] touchPins = new boolean[numTouchPins];
     public static final int[] key = {
-            NUM_0,
-            NUM_2,
-            NUM_3,
-            NUM_4,
-            NUM_5,
-            NUM_6,
-            NUM_7,
-            NUM_8,
-            NUM_9
+            A, S, D, F, G, H, J, K, L
     };
     public static final String[] strReceptions = {
             "T0",

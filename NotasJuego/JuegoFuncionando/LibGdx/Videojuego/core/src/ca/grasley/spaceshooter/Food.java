@@ -58,7 +58,7 @@ public class Food {
         }
     }
     private void foodCollected(final SpriteBatch batch){
-        /*DIBUJAR EN LA SUBIDA DEL ÁRBOL*/
+        /*BORRANDO LAS FRUTAS DEL TRONCO DEL ÁRBOL POSICIÓN A POSICIÓN ALCANZADA*/
         for(int i = food.length-1; i>GameHandler.counter; i--) {
             batch.draw(food[i], x, GameHandler.foodPositions[i], width, height);
         }
@@ -74,12 +74,16 @@ public class Food {
             }
         }
 
-        /*DIBUJANDO LAS FRUTAS RECOGIDAS EN LAS POSICIONES DESIGNADAS*/
-        for(int i = 0; i< GameHandler.counter; i++){
-            batch.draw(food[i],
-                    collectedFood_X + (width * topFood_X[i]),
-                    (int)(collectedFood_Y + (1.4* height * topFood_Y[i])),
+        /*DIBUJANDO LAS FRUTAS RECOGIDAS EN LAS POSICIONES DESIGNADAS POSICIÓN A POSICIÓN ALCANZADA*/
+        for(int i = -1; i< GameHandler.counter; i++){
+            if(GameHandler.counter == 8){
+                break;
+            }
+            batch.draw(food[i + 1],
+                    collectedFood_X + (width * topFood_X[i+1]),
+                        (int)(collectedFood_Y + (1.4* height * topFood_Y[i+1])),
                        width, height);
+
         }
     }
 }
