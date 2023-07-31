@@ -1,14 +1,16 @@
 package ca.grasley.spaceshooter;
 
+import static com.badlogic.gdx.Input.Keys.Q;
+import static com.badlogic.gdx.Input.Keys.W;
+import static com.badlogic.gdx.Input.Keys.E;
+import static com.badlogic.gdx.Input.Keys.R;
+import static com.badlogic.gdx.Input.Keys.T;
+import static com.badlogic.gdx.Input.Keys.Y;
+import static com.badlogic.gdx.Input.Keys.U;
+import static com.badlogic.gdx.Input.Keys.I;
+import static com.badlogic.gdx.Input.Keys.O;
+import static com.badlogic.gdx.Input.Keys.P;
 import static com.badlogic.gdx.Input.Keys.A;
-import static com.badlogic.gdx.Input.Keys.S;
-import static com.badlogic.gdx.Input.Keys.D;
-import static com.badlogic.gdx.Input.Keys.F;
-import static com.badlogic.gdx.Input.Keys.G;
-import static com.badlogic.gdx.Input.Keys.H;
-import static com.badlogic.gdx.Input.Keys.J;
-import static com.badlogic.gdx.Input.Keys.K;
-import static com.badlogic.gdx.Input.Keys.L;
 
 public class GameHandler {
     public static int WORLD_WIDTH = 72;
@@ -28,7 +30,8 @@ public class GameHandler {
     public static boolean foodPicked = false;
     public static boolean[] touchPins = new boolean[numTouchPins];
     public static final int[] key = {
-            A, S, D, F, G, H, J, K, L
+            Q, W, E, R, T, Y, U, I, O,
+            P, A
     };
     public static final String[] strReceptions = {
             "T0",
