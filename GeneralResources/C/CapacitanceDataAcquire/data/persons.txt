@@ -1,5 +1,6 @@
+Name: Juana, Height: 1.65m, Weight: 72Kg, It: 0
+Name: Hector_Carr, Height: 1.73m, Weight: 76Kg, It: 0
 Name: Pedro, Height: 1.81m, Weight: 112Kg, It: 0
-Name: a, Height: 1.81m, Weight: 112Kg, It: 0
-Name: hector, Height: 1.81m, Weight: 112Kg, It: 0
-Name: Andrea, Height: 1.81m, Weight: 112Kg, It: 0
-Name: Hector, Height: 1.80m, Weight: 73Kg, It: 0
+Name: Idle, Height: NAm, Weight: NAKg, It: 0
+Name: Hector, Height: 1.80m, Weight: 74Kg, It: 0
+Name: Michelle, Height: 1.62m, Weight: 47Kg, It: 0

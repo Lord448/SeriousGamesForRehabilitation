@@ -17,8 +17,8 @@
 #define CSV_FORMAT //Deploy the data in CSV format
 //#define BUTTON_START //Set up a button in pull up mode for start the data acquire
 
-#define NumberOfRepetitions 5
-#define NumberOfSamples 500
+#define NumberOfRepetitions 10
+#define NumberOfSamples 1000
 
 struct SerialString{
     std::string reset;

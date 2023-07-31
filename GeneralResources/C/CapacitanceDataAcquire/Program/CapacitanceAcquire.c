@@ -37,7 +37,7 @@
 /* Size of each input chunk to be
    read and allocate for. */
 #ifndef  READALL_CHUNK
-#define  READALL_CHUNK  262144
+#define  READALL_CHUNK  262144 //256B for embedded systems
 #endif
 
 #define  READALL_OK          0  /* Success */
@@ -243,7 +243,10 @@ int main(int argc, char *const *argv)
                 exit(-1);
             }
             while(infoGet) {
+                strclean(personsBuffer);
+                strclean(nameSearching);
                 fgets(personsBuffer, 100, users);
+                
                 if(personsBuffer[0] == 'N') {
                     //Searching in all the list of the names
                     for(int i = 0; i < strlen(personsBuffer); i++) {
@@ -498,9 +501,8 @@ int main(int argc, char *const *argv)
         }
         */
 #endif
-/*
         //Write the iteration
-        //char dataStream[200] = "";
+        /*
         char dataSearch[200] = "";
         char finalStream[100*100] = "";
 
@@ -511,34 +513,82 @@ int main(int argc, char *const *argv)
         }
 
         sprintf(dataSearch, "Name: %s, Height: %sm, Weight: %sKg, It: %d\n", person.name, person.height, person.weight, person.iteration);
-        */
-        /*
-        while(feof(users) != 0) { //Search all the file
-            fgets(dataStream, sizeof(dataStream) - 1, users);
-            if(strcmp(dataStream, dataSearch) == 0) {
-                printf("Se encontro");
-                person.iteration++;
-                sprintf(dataSearch, "Name: %s, Height: %sm, Weight: %sKg, It: %d\n", person.name, person.height, person.weight, person.iteration);
-                strcat(finalStream, dataSearch);
-                continue;
+        int textsize, numberOfPersons = 0;
+        char *dataStream;
+
+        readall(users, &dataStream, (size_t *)&textsize);
+        //Count how many persons are
+        for(int i = 0; i < textsize; i++) {
+            if(dataStream[i] == 'N') {
+                for(int j = i; j < textsize; j++) {
+                    if(dataStream[j] == '\n') {
+                        numberOfPersons++;
+                        i = j;
+                        break;
+                    } 
+                }
             }
-            strcat(finalStream, dataStream);
+        }        
+        char *personData[numberOfPersons];
+        bool allOK = false;
+
+        for(int i = 0, k = 0; i < numberOfPersons; i++) { //To navigate into personData
+            int chunk = 20; //Limit of the buffer allocated
+            char *temp;
+            personData[i] = (char *)calloc(chunk, sizeof(char *));
+            if(personData == NULL) {
+                printf("Not enough memory\nthe database will be overwritted in: %d\n", person.iteration);
+                printf("Error: %s\n", strerror(errno));
+                allOK = false;
+                break;
+            }
+            for(int j = k, l; j < textsize; j++) { //To search the strings
+                if(dataStream[j] == 'N') {
+                    for(l = 0, k = j; dataStream[k] != '\n'; l++, k++) { //To fill the strings
+                        if(l == chunk) { //reallocate the memory
+                            chunk++;
+                            temp = realloc(personData[i], chunk);
+                            if(temp == NULL) {
+                                printf("Not enough memory\nthe database will be overwritted in: %d\n", person.iteration);
+                                printf("Error: %s\n", strerror(errno));
+                                allOK = false;
+                                i = numberOfPersons;
+                                break;
+                            }
+                            personData[i] = temp;
+                        }
+                        personData[i][k] = dataStream[k];
+                    }
+                    break;
+                }
+            }
         }
-        */
-        /*
-        char *dataStream = (char *)malloc(10*sizeof(char));
-        readall(users, &dataStream, sizeof(char));
+
+        for(int i = 0; i < numberOfPersons; i++) {
+            printf("P%d: %s\n", i, personData[i]);
+        }
+
+        //Free the all the dinamyc memory
+        for(int i = 0; i < numberOfPersons; i++) {
+            char *curr = personData[i];
+            free(curr);
+        }
+
+        free(dataStream);
 
         fclose(users);
 
-        users = fopen("data/persons.txt", "w");
-        if(users == NULL) {
-            printf("The persons.txt can't be opened\nError: %s", strerror(errno));
-            exit(-1);
+        if(allOK) {
+            users = fopen("data/persons.txt", "w");
+            if(users == NULL) {
+                printf("The persons.txt can't be opened\nError: %s", strerror(errno));
+                exit(-1);
+            }
+            fprintf(users, "%s", finalStream);
+            fclose(users);
         }
-        fprintf(users, "%s", finalStream);
-        fclose(users);
         */
+
 #ifdef DELETE_TMP
         usleep(300*100);
         for(int i = 0; i < numberReps; i++) {
@@ -711,7 +761,7 @@ void sendData(int fd, char *string) {
 
 /**
  * @brief It appends the source string into the destinatary string, and all
- *        the result in saved on the destinatary, all separated by a new line and it also finishes
+ *        the result is saved on the destinatary, all separated by a new line and it also finishes
  *        when a new line is founded
  * @note  The new line character is conserved at the end of the string
  * @param dest: Destinatary string
