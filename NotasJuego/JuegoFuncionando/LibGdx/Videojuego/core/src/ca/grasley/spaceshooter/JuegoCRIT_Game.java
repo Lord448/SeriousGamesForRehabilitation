@@ -1,13 +1,23 @@
 package ca.grasley.spaceshooter;
 
 import com.badlogic.gdx.Game;
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.assets.AssetManager;
+import com.badlogic.gdx.audio.Music;
+import com.badlogic.gdx.audio.Sound;
 
 public class JuegoCRIT_Game extends Game {
 	GameScreen gameScreen;
+	Sounds sounds;
 	@Override
 	public void create () {
+		/*PANTALLA DEL JUEGO*/
 		gameScreen = new GameScreen();
 		setScreen(gameScreen);
+
+		/*SONIDOS DEL JUEGO*/
+		sounds = new Sounds();
+		sounds.create();
 	}
 
 	@Override
@@ -18,7 +28,8 @@ public class JuegoCRIT_Game extends Game {
 
 	@Override
 	public void dispose () {
-		super.dispose();
+		sounds.dispose();
+		gameScreen.dispose();
 	}
 
 	@Override
