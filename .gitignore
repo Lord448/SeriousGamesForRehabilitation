@@ -3,3 +3,7 @@ NotasBLE/ESPMCU/Arduino/presentacion_crit/.vscode/
 NotasBLE/ESPMCU/Arduino/ladder/build/
 NotasBLE/ESPMCU/Arduino/respirador/.vscode/
 NotasBLE/ESPMCU/Arduino/respirador/build/
+ESPMCU/senseCapacitive/build/
+ESPMCU/senseCapacitive/.vscode/
+GeneralResources/C/.vscode
+GeneralResources/C/CapacitanceDataAcquire/Program/.vscode

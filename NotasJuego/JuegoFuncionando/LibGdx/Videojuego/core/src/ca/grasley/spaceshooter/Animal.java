@@ -1,11 +1,13 @@
 package ca.grasley.spaceshooter;
 
+import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 
 public class Animal {
+    private int maxLim, minLim;
     private int width = 7, height = 10;
     private float x, y;
     private final float speed;
@@ -16,6 +18,8 @@ public class Animal {
     private final Sound victorySound;
     public Animal (int x, int y, int width, int height, int max_lim, int min_lim, float speed) {
         float positionSet = 0;
+        this.maxLim = maxLim;
+        this.minLim = minLim;
         this.x = x;
         this.y = y;
         this.width = width;
@@ -26,18 +30,19 @@ public class Animal {
         victorySound = Gdx.audio.newSound(Gdx.files.internal("Sounds/Effects/achievement.ogg"));
         //Each position has a step of 7.5 units when we have a length of 8 positions
         for(int i = 0; i < positions.length; i++) {
-            positionSet += ((float) (max_lim - min_lim) / positions.length);
+            positionSet += ((float) (maxLim - minLim) / positions.length);
             positions[i] = positionSet;
             GameHandler.foodPositions[i] = positions[i];
             System.out.println(positions[i]);
         }
+        GameHandler.touchPins[0] = true;
     }
     public void render(final SpriteBatch batch){
+        GameHandler.AnimalY = y + 9;
         batch.draw(animal_texture, x, y, width, height);
         touchPins();
         climb();
     }
-
     private void touchPins(){
         int currentPin;
         for(int i = 0; i < GameHandler.numTouchPins; i++) {
@@ -48,8 +53,9 @@ public class Animal {
                     nextPin++;
                 }
                 for(int j = 0; j < GameHandler.numTouchPins; j++) {
-                    if(j != i)
+                    if(j != i){
                         GameHandler.touchPins[j] = false;
+                    }
                 }
             }
         }
