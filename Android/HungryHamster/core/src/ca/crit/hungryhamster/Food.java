@@ -1,4 +1,4 @@
-package ca.grasley.spaceshooter;
+package ca.crit.hungryhamster;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Texture;
@@ -70,8 +70,8 @@ public class Food {
             }
             batch.draw(food[i + 1],
                     collectedFood_X + (width * topFood_X[i+1]),
-                        (int)(collectedFood_Y + (1.4* height * topFood_Y[i+1])),
-                       width, height);
+                    (int)(collectedFood_Y + (1.4* height * topFood_Y[i+1])),
+                    width, height);
 
         }
     }

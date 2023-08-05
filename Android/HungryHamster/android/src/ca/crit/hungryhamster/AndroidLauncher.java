@@ -1,4 +1,4 @@
-package ca.grasley.spaceshooter;
+package ca.crit.hungryhamster;
 
 import android.bluetooth.BluetoothAdapter;
 import android.os.Bundle;
@@ -43,7 +43,7 @@ public class AndroidLauncher extends AndroidApplication {
 		}
 
 		AndroidApplicationConfiguration config = new AndroidApplicationConfiguration();
-		initialize(new JuegoCRIT_Game(), config);
+		initialize(new Main_hungryHamster(), config);
 	}
 
 	public void onCharacteristicNotificationListener(byte[] value) {

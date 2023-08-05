@@ -1,8 +1,9 @@
-package ca.grasley.spaceshooter;
+package ca.crit.hungryhamster;
+
 
 import com.badlogic.gdx.Game;
 
-public class JuegoCRIT_Game extends Game {
+public class Main_hungryHamster extends Game {
 	GameScreen gameScreen;
 	Sounds sounds;
 	@Override
@@ -33,3 +34,4 @@ public class JuegoCRIT_Game extends Game {
 		gameScreen.resize(width, height);
 	}
 }
+

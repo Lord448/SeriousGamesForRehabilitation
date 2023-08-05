@@ -1,4 +1,4 @@
-package ca.grasley.spaceshooter;
+package ca.crit.hungryhamster;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.audio.Music;
@@ -20,3 +20,4 @@ public class Sounds {
         music.dispose();
     }
 }
+
