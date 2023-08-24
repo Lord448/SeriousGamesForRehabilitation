@@ -18,7 +18,6 @@ public class GameScreen implements Screen {
 
     /*GRAPHICS*/
     private final SpriteBatch batch;
-    private final Texture treeHouse;
     private final Background background;
 
     /*CHARACTER*/
@@ -38,6 +37,12 @@ public class GameScreen implements Screen {
         /*GRAPHICS*/
         background = new Background();
         treeHouse = new Texture("Background/tree_house.png");
+        for(int i = 0; i < fruits.length; i++) {
+            fruits[i] = new Food(GameHandler.WORLD_WIDTH / 2 + 8, 9, 7, 7, i, true);
+            fruits[i].disappear();
+        }
+        lowerFoodStack = new FoodStack(GameHandler.WORLD_WIDTH/2+10, 0, 7, 7, FoodStack.LOWER);
+        upperFoodStack = new FoodStack(GameHandler.WORLD_WIDTH/2+10, 90, 7, 7, FoodStack.UPPER);
         batch = new SpriteBatch();
         /*CHARACTERS*/
         wizard = new Wizard(GameHandler.WORLD_WIDTH/2 - 25 , 2, 26, 25, 1/10f);
@@ -56,6 +61,16 @@ public class GameScreen implements Screen {
     @Override
     public void render(float deltaTime) {
         batch.begin();
+            if(GameHandler.foodCarrying) {
+                fruits[GameHandler.currentFruit].appear();
+                for(int i = 0; i < fruits.length; i++) {
+                    if(i == GameHandler.currentFruit)
+                        continue;
+                    fruits[i].disappear();
+                }
+            }
+            else if(GameHandler.foodDelivered)
+                fruits[GameHandler.currentFruit].disappear();
             /*BACKGROUND*/
             background.renderDynamicBackground(deltaTime, batch);
             background.renderStaticBackground(batch);

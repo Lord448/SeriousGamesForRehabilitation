@@ -6,6 +6,14 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 
 public class Food {
+    public static final int BANANA = 0;
+    public static int APPLE = 1;
+    public static int GRAPES = 2;
+    public static int GREEN_GRAPES = 3;
+    public static int PINEAPPLE = 4;
+    public static int KIWI = 5;
+    public static int CHEERY = 6;
+    public static int STRAWBERRY = 7;
     private int width, height;
     private int x;
     private int collectedFood_X = 57, collectedFood_Y = 87;
@@ -16,12 +24,12 @@ public class Food {
         this.x = x;
         this.width = width;
         this.height = height;
-
+        this.isCarriable = isCarriable;
         image = new Texture(Gdx.files.internal("Food/food.png"));
         TextureRegion [][] tmp = TextureRegion.split(image, image.getWidth()/4, image.getHeight()/2);
         food = new TextureRegion[8];
         int j = 0, i = 0;
-        for(int w = 0; w< food.length; w++){
+        for(int w = 0; w < food.length; w++){
             food[w] = tmp [j][i];
             i++;
             if(i >= 4){
@@ -72,7 +80,33 @@ public class Food {
                     collectedFood_X + (width * topFood_X[i+1]),
                         (int)(collectedFood_Y + (1.4* height * topFood_Y[i+1])),
                        width, height);
-
         }
+    }
+
+    public void render(final SpriteBatch batch) {
+        /*
+        if(isCarriable)
+            System.out.println("bool appear " + hasToAppear + " fruit " + fruit);
+         */
+        if(GameHandler.foodCarrying && isCarriable && hasToAppear)
+            batch.draw(food[fruit], x, GameHandler.AnimalY, width, height);
+        else if(!isCarriable)
+            batch.draw(food[fruit], x, y, width, height);
+    }
+    
+    public void disappear() {
+        if(isCarriable)
+            hasToAppear = false;
+        else {
+            lastY = y;
+            y = -10;
+        }
+    }
+
+    public void appear() {
+        if(isCarriable)
+            hasToAppear = true;
+        else
+            y = lastY;
     }
 }
