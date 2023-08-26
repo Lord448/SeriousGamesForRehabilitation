@@ -58,8 +58,7 @@ public class Animal {
         float currentPos = y;
         for(int i = 0; i < GameHandler.numTouchPins; i++) {
             if(GameHandler.touchPins[i]) {
-                if(currentPos > positions[i]+GameHandler.animHysteresis)
-                {
+                if(currentPos > positions[i]+GameHandler.animHysteresis) {
                     y -= Gdx.graphics.getDeltaTime()*speed;
                 }
                 else if(currentPos < positions[i]-GameHandler.animHysteresis){
@@ -67,14 +66,21 @@ public class Animal {
                     if(y >= positions[i] - GameHandler.animHysteresis){
                         GameHandler.foodPicked = true;
                         GameHandler.animalPositions[i] = y;
-                        GameHandler.counter ++;
-                        if(GameHandler.counter == 8){ //Llegó a la casa
+                        GameHandler.counter++;
+                        if(GameHandler.counter == 8) { //Get into the house
+                            resetPosition();
+                        }
+                        if(GameHandler.counter == GameHandler.countsToWin) { //Finish the session
                             winSound();
                         }
                     }
                 }
             }
         }
+    }
+
+    private void resetPosition() {
+
     }
 
     private void winSound() {

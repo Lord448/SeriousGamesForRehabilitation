@@ -5,7 +5,6 @@ import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.viewport.StretchViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
@@ -29,7 +28,9 @@ public class GameScreen implements Screen {
     private final Food food;
 
     /*TEXT*/
-    private final BitmapFont font;
+    //private final BitmapFont font;
+
+    private final GameText WinText;
 
     GameScreen(){
         /*SCREEN*/
@@ -45,8 +46,11 @@ public class GameScreen implements Screen {
         /*OBJECTS*/
         food = new Food(GameHandler.WORLD_WIDTH/2+6, 5, 6);
         /*TEXT*/
-        font = new BitmapFont(Gdx.files.internal("Fonts/logros.fnt"), Gdx.files.internal("Fonts/logros.png"), false);
-        font.getData().setScale(0.2f, 0.2f);
+        WinText = new GameText("¡Bien \nHecho!", Gdx.files.internal("Fonts/logros.fnt"), Gdx.files.internal("Fonts/logros.png"), false);
+        WinText.setX(3);
+        WinText.setY(50);
+        //font = new BitmapFont(Gdx.files.internal("Fonts/logros.fnt"), Gdx.files.internal("Fonts/logros.png"), false);
+        //font.getData().setScale(0.2f, 0.2f);
     }
     @Override
     public void show() {
@@ -67,8 +71,9 @@ public class GameScreen implements Screen {
         wizard.render(batch);
         animal.render(batch);
         /*TEXT*/
-        if(GameHandler.counter == 8)
-            font.draw(batch, "¡Bien \nHecho!", 3, 50);
+        if(GameHandler.counter == GameHandler.countsToHouse)
+            WinText.draw(batch);
+            //font.draw(batch, "¡Bien \nHecho!", 3, 50);
         batch.end();
     }
 
@@ -97,6 +102,6 @@ public class GameScreen implements Screen {
     public void dispose() {
         wizard.dispose();
         animal.dispose();
-        font.dispose();
+        WinText.dispose();
     }
 }
