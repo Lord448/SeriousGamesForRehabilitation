@@ -9,10 +9,11 @@ public class Animal {
     private int width = 7, height = 10;
     private float x, y;
     private final float speed;
-    private final float[] positions = new float[GameHandler.numTouchPins];
+    private final float[] positions = new float[GameHandler.numHouseSteps];
     private final Texture animal_texture;
     private int nextPin = 0;
     private final Sound victorySound;
+    private boolean fruitPosFlag = false;
     public Animal (int x, int y, int width, int height, int max_lim, int min_lim, float speed) {
         float positionSet = 0;
         this.x = x;
@@ -28,25 +29,25 @@ public class Animal {
             positionSet += ((float) (max_lim - min_lim) / positions.length);
             positions[i] = positionSet;
             GameHandler.foodPositions[i] = positions[i];
-            System.out.println(positions[i]);
+            //System.out.println(positions[i]);
         }
     }
     public void render(final SpriteBatch batch){
         batch.draw(animal_texture, x, y, width, height);
-        touchPins();
+        checkKeyPressed();
         climb();
     }
 
-    private void touchPins(){
+    private void checkKeyPressed(){
         int currentPin;
-        for(int i = 0; i < GameHandler.numTouchPins; i++) {
+        for(int i = 0; i < GameHandler.numHouseSteps; i++) {
             if(Gdx.input.isKeyJustPressed(GameHandler.key[i])) {
                 currentPin = i;
                 if(currentPin == nextPin){
                     GameHandler.touchPins[i] = true;
                     nextPin++;
                 }
-                for(int j = 0; j < GameHandler.numTouchPins; j++) {
+                for(int j = 0; j < GameHandler.numHouseSteps; j++) {
                     if(j != i)
                         GameHandler.touchPins[j] = false;
                 }
@@ -56,21 +57,24 @@ public class Animal {
 
     private void climb(){
         float currentPos = y;
-        for(int i = 0; i < GameHandler.numTouchPins; i++) {
-            if(GameHandler.touchPins[i]) {
-                if(currentPos > positions[i]+GameHandler.animHysteresis) {
+        //Controls the move of the animal
+        for(int i = 0; i < GameHandler.numHouseSteps; i++) {
+            if(GameHandler.touchPins[i]) { //Searching if we need to move the animal
+                if(currentPos > positions[i]+GameHandler.animHysteresis) { //Getting down
                     y -= Gdx.graphics.getDeltaTime()*speed;
                 }
-                else if(currentPos < positions[i]-GameHandler.animHysteresis){
+                else if(currentPos < positions[i]-GameHandler.animHysteresis){ //Getting up
                     y += Gdx.graphics.getDeltaTime()*speed;
-                    if(y >= positions[i] - GameHandler.animHysteresis){
+                    //System.out.println("y: " + y + ", pos: " + (positions[i] - GameHandler.animHysteresis));
+                    if(y >= positions[GameHandler.animalCounter+1] - GameHandler.animHysteresis){
+                        //System.out.println("Entro en: " + (positions[i] - GameHandler.animHysteresis));
                         GameHandler.foodPicked = true;
                         GameHandler.animalPositions[i] = y;
-                        GameHandler.counter++;
-                        if(GameHandler.counter == 8) { //Get into the house
+                        GameHandler.animalCounter++;
+                        if(GameHandler.animalCounter == GameHandler.countsToHouse) { //Get into the house
                             resetPosition();
                         }
-                        if(GameHandler.counter == GameHandler.countsToWin) { //Finish the session
+                        if(GameHandler.animalCounter == GameHandler.countsToWin) { //Finish the session
                             winSound();
                         }
                     }

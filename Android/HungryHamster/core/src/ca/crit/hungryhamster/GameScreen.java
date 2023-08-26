@@ -71,7 +71,7 @@ public class GameScreen implements Screen {
         wizard.render(batch);
         animal.render(batch);
         /*TEXT*/
-        if(GameHandler.counter == GameHandler.countsToHouse)
+        if(GameHandler.animalCounter == GameHandler.countsToWin)
             WinText.draw(batch);
             //font.draw(batch, "¡Bien \nHecho!", 3, 50);
         batch.end();

@@ -49,11 +49,11 @@ public class AndroidLauncher extends AndroidApplication {
 	public void onCharacteristicNotificationListener(byte[] value) {
 		strValue = new String(value, StandardCharsets.UTF_8);
 		Log.i(TAG, "Received: " + strValue);
-		for(int i = 0; i <= GameHandler.numTouchPins; i++) {
+		for(int i = 0; i <= GameHandler.numHouseSteps; i++) {
 			if(strValue.toLowerCase().trim().equals(GameHandler.strReceptions[i].toLowerCase().trim())) {
 				GameHandler.touchPins[i] = true;
 				GameHandler.wizardSpell = true;
-				for(int j = 0; j < GameHandler.numTouchPins; j++) {
+				for(int j = 0; j < GameHandler.numHouseSteps; j++) {
 					if(j != i) {
 						GameHandler.touchPins[j] = false;
 					}
