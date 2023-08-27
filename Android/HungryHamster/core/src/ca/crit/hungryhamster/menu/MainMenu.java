@@ -1,15 +1,12 @@
-package ca.crit.hungryhamster.menus;
+package ca.crit.hungryhamster.menu;
 
-import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
-import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
-import com.badlogic.gdx.scenes.scene2d.ui.Button;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
@@ -19,8 +16,6 @@ import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.utils.viewport.StretchViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 
-import org.w3c.dom.Text;
-
 import java.util.Objects;
 
 import ca.crit.hungryhamster.GameHandler;
@@ -29,7 +24,7 @@ import ca.crit.hungryhamster.main.GameScreen;
 import ca.crit.hungryhamster.main.GameText;
 import ca.crit.hungryhamster.main.Sounds;
 
-public class MainMenu implements Screen {
+public class MainMenu implements Screen{
     //STATES
     private enum MenuState {
         INIT,
@@ -44,15 +39,12 @@ public class MainMenu implements Screen {
     //GRAPHICS
     private final SpriteBatch batch;
     private final Background background;
-    private Skin skin;
-    private Stage mainStage, loginStage, registerStage, configStage;
-    private GameScreen gameScreen;
-    private Sounds sounds;
-    private GameText titleText, whoPlaysText;
+    private final Skin skin;
+    private final Stage mainStage, loginStage, registerStage, configStage;
+    private final GameText titleText, whoPlaysText;
     //private final Sound clickButtonSound;
 
-    public MainMenu(GameScreen gameScreen) {
-        this.gameScreen = gameScreen;
+    public MainMenu() {
         mainStage = new Stage();
         loginStage = new Stage();
         registerStage = new Stage();
@@ -244,16 +236,36 @@ public class MainMenu implements Screen {
         //Labels
         Label lblSteps = new Label("Numero de escalones", skin);
         Label lblTime = new Label("Tiempo", skin);
+        Label lblError = new Label("", skin);
         //Text Fields
         TextField fieldSteps = new TextField("", skin);
         TextField fieldTime = new TextField("", skin);
         //Buttons
         TextButton btnPlay = new TextButton("Jugar", skin);
+        btnPlay.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                if(!Objects.equals(fieldTime.getText(), "") && !Objects.equals(fieldSteps, "")) {
+                    try {
+                        GameHandler.steps = Integer.parseInt(fieldSteps.getText().trim());
+                        GameHandler.time = Integer.parseInt(fieldTime.getText().trim());
+                        //Start the game
+                        GameHandler.startGame = true;
+                    }
+                    catch (NumberFormatException ex) {
+                        lblError.setText("Inserte numeros porfavor");
+                    }
+
+                }
+            }
+        });
         //Table
         Table table = new Table();
         table.setFillParent(true);
         table.setPosition(0, -30);
         //Table Interns
+        table.add(lblError).padBottom(20).colspan(2);
+        table.row();
         table.add(lblSteps).padRight(50);
         table.add(lblTime);
         table.row().padBottom(30);

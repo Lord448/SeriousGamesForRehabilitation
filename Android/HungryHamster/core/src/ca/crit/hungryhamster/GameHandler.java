@@ -31,6 +31,7 @@ public class GameHandler {
     public static int animalCounter = -1;
     public static int countsToWin = 8;
     public static boolean foodPicked = false;
+    public static boolean startGame = false;
     public static boolean[] touchPins = new boolean[numHouseSteps];
     public static String playerID;
     public static int steps, time;

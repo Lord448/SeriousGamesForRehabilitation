@@ -96,4 +96,8 @@ eclipse.project.name = appName + "-android"
 
 dependencies {
     implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'com.google.android.material:material:1.8.0'        //Diseño
+    implementation 'com.google.firebase:firebase-auth:21.3.0'           //AUTENTICACIÓN para correos
+    implementation 'com.google.firebase:firebase-database:20.2.0'       //BASE DATOS para usuario y contraseña
+    implementation 'com.airbnb.android:lottie:3.0.1'                    //Para implementar Animaciones
 }

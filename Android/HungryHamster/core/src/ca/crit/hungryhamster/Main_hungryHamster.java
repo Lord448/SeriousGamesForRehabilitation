@@ -5,35 +5,39 @@ import com.badlogic.gdx.Game;
 
 import ca.crit.hungryhamster.main.GameScreen;
 import ca.crit.hungryhamster.main.Sounds;
-import ca.crit.hungryhamster.menus.MainMenu;
+import ca.crit.hungryhamster.menu.MainMenu;
 
 public class Main_hungryHamster extends Game {
-	MainMenu mainMenu;
-	GameScreen gameScreen;
-	Sounds sounds;
+	private MainMenu mainMenu;
+	private GameScreen gameScreen;
+
 	@Override
 	public void create () {
 		/*PANTALLA DEL JUEGO*/
 		gameScreen = new GameScreen();
 		//setScreen(gameScreen);
 
-		mainMenu = new MainMenu(gameScreen);
+		mainMenu = new MainMenu();
 		setScreen(mainMenu);
 
 		/*SONIDOS DEL JUEGO*/
-		sounds = new Sounds();
-		sounds.create();
+		Sounds sounds = new Sounds();
+		Sounds.create();
 	}
 
 	@Override
 	public void render () {
 		super.render();
+		if(GameHandler.startGame) {
+			setScreen(gameScreen);
+			GameHandler.startGame = false;
+		}
 	}
 
 
 	@Override
 	public void dispose () {
-		sounds.dispose();
+		Sounds.dispose();
 		gameScreen.dispose();
 	}
 
