@@ -32,6 +32,8 @@ public class GameHandler {
     public static int countsToWin = 8;
     public static boolean foodPicked = false;
     public static boolean[] touchPins = new boolean[numHouseSteps];
+    public static String playerID;
+    public static int steps, time;
     public static final int[] key = {
             Q, W, E, R, T, Y, U, I, O,
             P, A
