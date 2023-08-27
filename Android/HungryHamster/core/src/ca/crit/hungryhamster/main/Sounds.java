@@ -1,7 +1,9 @@
-package ca.crit.hungryhamster;
+package ca.crit.hungryhamster.main;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.audio.Music;
+
+import ca.crit.hungryhamster.GameHandler;
 
 public class Sounds {
     private static Music music;

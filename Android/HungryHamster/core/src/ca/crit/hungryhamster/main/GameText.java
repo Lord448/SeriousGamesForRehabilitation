@@ -1,12 +1,8 @@
-package ca.crit.hungryhamster;
+package ca.crit.hungryhamster.main;
 
-import com.badlogic.gdx.Game;
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
-
-import java.io.File;
 
 public class GameText {
     private float x, y;

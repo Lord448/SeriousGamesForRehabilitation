@@ -1,9 +1,11 @@
-package ca.crit.hungryhamster;
+package ca.crit.hungryhamster.main;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+
+import ca.crit.hungryhamster.GameHandler;
 
 public class Food {
     private int width, height;

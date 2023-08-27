@@ -1,7 +1,9 @@
-package ca.crit.hungryhamster;
+package ca.crit.hungryhamster.main;
 
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+
+import ca.crit.hungryhamster.GameHandler;
 
 public class Background {
     /*GRAPHICS*/
@@ -11,7 +13,7 @@ public class Background {
     private final float[] backgroundOffsets = {0,0};
     private final float scrollingSpeed;
 
-    Background(){
+    public Background(){
         /*BACKGROUNDS*/
         dynamicBackgrounds = new Texture[2];
         dynamicBackgrounds [0] = new Texture("Background/layer_sky.png");

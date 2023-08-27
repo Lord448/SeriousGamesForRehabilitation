@@ -1,9 +1,11 @@
-package ca.crit.hungryhamster;
+package ca.crit.hungryhamster.main;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+
+import ca.crit.hungryhamster.GameHandler;
 
 public class Animal {
     private int width = 7, height = 10;
@@ -34,7 +36,8 @@ public class Animal {
     }
     public void render(final SpriteBatch batch){
         batch.draw(animal_texture, x, y, width, height);
-        checkKeyPressed();
+        if(GameHandler.environment == GameHandler.DESKTOP_ENV)
+            checkKeyPressed(); //Only for desktop environment
         climb();
     }
 
@@ -60,14 +63,13 @@ public class Animal {
         //Controls the move of the animal
         for(int i = 0; i < GameHandler.numHouseSteps; i++) {
             if(GameHandler.touchPins[i]) { //Searching if we need to move the animal
-                if(currentPos > positions[i]+GameHandler.animHysteresis) { //Getting down
+                if(currentPos > positions[i]+GameHandler.animHysteresis) { //Moving down
                     y -= Gdx.graphics.getDeltaTime()*speed;
                 }
-                else if(currentPos < positions[i]-GameHandler.animHysteresis){ //Getting up
+                else if(currentPos < positions[i]-GameHandler.animHysteresis){ //Moving up
                     y += Gdx.graphics.getDeltaTime()*speed;
-                    //System.out.println("y: " + y + ", pos: " + (positions[i] - GameHandler.animHysteresis));
-                    if(y >= positions[GameHandler.animalCounter+1] - GameHandler.animHysteresis){
-                        //System.out.println("Entro en: " + (positions[i] - GameHandler.animHysteresis));
+                    //Checking if we have reached the position
+                    if(y >= positions[GameHandler.animalCounter+1] - GameHandler.animHysteresis) {
                         GameHandler.foodPicked = true;
                         GameHandler.animalPositions[i] = y;
                         GameHandler.animalCounter++;

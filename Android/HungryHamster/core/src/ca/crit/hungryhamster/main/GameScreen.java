@@ -1,4 +1,4 @@
-package ca.crit.hungryhamster;
+package ca.crit.hungryhamster.main;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
@@ -8,6 +8,8 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.viewport.StretchViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
+
+import ca.crit.hungryhamster.GameHandler;
 
 public class GameScreen implements Screen {
 
@@ -32,7 +34,7 @@ public class GameScreen implements Screen {
 
     private final GameText WinText;
 
-    GameScreen(){
+    public GameScreen(){
         /*SCREEN*/
         camera = new OrthographicCamera();
         viewport = new StretchViewport(GameHandler.WORLD_WIDTH, GameHandler.WORLD_HEIGHT, camera);
