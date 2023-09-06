@@ -15,7 +15,6 @@ public class Animal {
     private final Texture animal_texture;
     private int nextPin = 0;
     private final Sound victorySound;
-    private boolean fruitPosFlag = false;
     public Animal (int x, int y, int width, int height, int max_lim, int min_lim, float speed) {
         float positionSet = 0;
         this.x = x;
@@ -23,6 +22,8 @@ public class Animal {
         this.width = width;
         this.height = height;
         this.speed = speed;
+        GameHandler.foodPositions = new float[GameHandler.numHouseSteps];
+        GameHandler.animalPositions = new float[GameHandler.numHouseSteps];
         GameHandler.foodSaved = max_lim;
         animal_texture = new Texture("Animals/cutiehamster.png");
         victorySound = Gdx.audio.newSound(Gdx.files.internal("Sounds/Effects/achievement.ogg"));
@@ -31,7 +32,7 @@ public class Animal {
             positionSet += ((float) (max_lim - min_lim) / positions.length);
             positions[i] = positionSet;
             GameHandler.foodPositions[i] = positions[i];
-            //System.out.println(positions[i]);
+            System.out.println("Pos:" + i + " " + positions[i]);
         }
     }
     public void render(final SpriteBatch batch){
@@ -73,9 +74,6 @@ public class Animal {
                         GameHandler.foodPicked = true;
                         GameHandler.animalPositions[i] = y;
                         GameHandler.animalCounter++;
-                        if(GameHandler.animalCounter == GameHandler.countsToHouse) { //Get into the house
-                            resetPosition();
-                        }
                         if(GameHandler.animalCounter == GameHandler.countsToWin) { //Finish the session
                             winSound();
                         }
@@ -83,10 +81,6 @@ public class Animal {
                 }
             }
         }
-    }
-
-    private void resetPosition() {
-
     }
 
     private void winSound() {

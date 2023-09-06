@@ -9,13 +9,13 @@ import com.badlogic.gdx.backends.android.AndroidApplication;
 import com.badlogic.gdx.backends.android.AndroidApplicationConfiguration;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.UUID;
 
 public class AndroidLauncher extends AndroidApplication {
 
 	public static final UUID txChUUID = UUID.fromString("058804de-0a45-11ee-be56-0242ac120002");
 	public static final UUID rxChUUID = UUID.fromString("006e861c-0a45-11ee-be56-0242ac120002");
-
 	private static final String TAG = "AndroidLauncher";
 	private static final String deviceName = "Ladder";
 	private BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
@@ -43,6 +43,7 @@ public class AndroidLauncher extends AndroidApplication {
 		}
 		GameHandler.environment = GameHandler.MOBILE_ENV;
 		GameHandler.musicVolume = 0.5f;
+		Arrays.fill(GameHandler.touchPins, false);
 		AndroidApplicationConfiguration config = new AndroidApplicationConfiguration();
 		initialize(new Main_hungryHamster(), config);
 	}

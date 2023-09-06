@@ -8,18 +8,17 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import ca.crit.hungryhamster.GameHandler;
 
 public class Food {
-    private int width, height;
-    private int x;
-    private int collectedFood_X = 57, collectedFood_Y = 87;
-    private TextureRegion[] food;
-    private Texture image;
+    private final int width;
+    private final int height;
+    private final int x;
+    private final TextureRegion[] food;
 
     public Food(int x, int width, int height){
         this.x = x;
         this.width = width;
         this.height = height;
 
-        image = new Texture(Gdx.files.internal("Food/food.png"));
+        Texture image = new Texture(Gdx.files.internal("Food/food.png"));
         TextureRegion [][] tmp = TextureRegion.split(image, image.getWidth()/4, image.getHeight()/2);
         food = new TextureRegion[8];
         int j = 0, i = 0;
@@ -33,8 +32,7 @@ public class Food {
         }
     }
     public void render(final SpriteBatch batch){
-
-        if(GameHandler.foodPicked == false){
+        if(!GameHandler.foodPicked){
             foodStack(batch);
         }else{
             foodCollected(batch);
@@ -70,6 +68,8 @@ public class Food {
             if(GameHandler.animalCounter == 8){
                 break;
             }
+            int collectedFood_X = 57;
+            int collectedFood_Y = 87;
             batch.draw(food[i + 1],
                     collectedFood_X + (width * topFood_X[i+1]),
                     (int)(collectedFood_Y + (1.4* height * topFood_Y[i+1])),

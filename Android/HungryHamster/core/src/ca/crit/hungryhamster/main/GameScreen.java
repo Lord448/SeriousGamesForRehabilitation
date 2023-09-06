@@ -24,10 +24,10 @@ public class GameScreen implements Screen {
 
     /*CHARACTER*/
     private final Wizard wizard;
-    private final Animal animal;
+    private Animal animal;
 
     /*OBJECTS*/
-    private final Food food;
+    private Food food;
 
     /*TEXT*/
     //private final BitmapFont font;
@@ -44,9 +44,9 @@ public class GameScreen implements Screen {
         batch = new SpriteBatch();
         /*CHARACTERS*/
         wizard = new Wizard(GameHandler.WORLD_WIDTH/2 - 25 , 2, 26, 25, 1/10f);
-        animal = new Animal(GameHandler.WORLD_WIDTH/2+5, 0, 7, 10, 107, 20, 30);
+
         /*OBJECTS*/
-        food = new Food(GameHandler.WORLD_WIDTH/2+6, 5, 6);
+
         /*TEXT*/
         WinText = new GameText("¡Bien \nHecho!", Gdx.files.internal("Fonts/logros.fnt"), Gdx.files.internal("Fonts/logros.png"), false);
         WinText.setX(3);
@@ -56,7 +56,8 @@ public class GameScreen implements Screen {
     }
     @Override
     public void show() {
-
+        animal = new Animal(GameHandler.WORLD_WIDTH/2+5, 0, 7, 10, 107, 20, 30);
+        food = new Food(GameHandler.WORLD_WIDTH/2+6, 5, 6);
     }
 
     @Override
