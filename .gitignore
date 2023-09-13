@@ -7,3 +7,5 @@ ESPMCU/senseCapacitive/build/
 ESPMCU/senseCapacitive/.vscode/
 GeneralResources/C/.vscode
 GeneralResources/C/CapacitanceDataAcquire/Program/.vscode
+ESPMCU/Ladder/.vscode/
+ESPMCU/Ladder/build/
