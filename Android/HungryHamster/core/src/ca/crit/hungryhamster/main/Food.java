@@ -1,80 +1,45 @@
 package ca.crit.hungryhamster.main;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.Circle;
 
 import ca.crit.hungryhamster.GameHandler;
 
 public class Food {
+    private final Fruits fruits;
     private final int width;
     private final int height;
-    private final int x;
-    private final TextureRegion[] food;
+    private final float x, y;
+    private boolean isPicked = false;
+    public Circle hitbox;
 
-    public Food(int x, int width, int height){
+    public Food(float x, float y, int width, int height, Fruits fruit){
         this.x = x;
+        this.y = y;
         this.width = width;
         this.height = height;
-
-        Texture image = new Texture(Gdx.files.internal("Food/food.png"));
-        TextureRegion [][] tmp = TextureRegion.split(image, image.getWidth()/4, image.getHeight()/2);
-        food = new TextureRegion[8];
-        int j = 0, i = 0;
-        for(int w = 0; w< food.length; w++){
-            food[w] = tmp [j][i];
-            i++;
-            if(i >= 4){
-                j++;
-                i = 0;
-            }
-        }
+        this.fruits = fruit;
+        hitbox = new Circle((float)width/2, (float)height/2, (float)height/2+1);
+        hitbox.setPosition(x, y);
     }
+
     public void render(final SpriteBatch batch){
-        if(!GameHandler.foodPicked){
-            foodStack(batch);
-        }else{
-            foodCollected(batch);
+        if(!isPicked) {
+            batch.draw(fruits.getTexture(), x, y, width, height);
         }
     }
 
-    private void foodStack(final SpriteBatch batch){
-        for(int i=0; i< food.length; i++){
-            if(GameHandler.animalPositions[i] != GameHandler.foodPositions[i]){
-                batch.draw(food[i], x, GameHandler.foodPositions[i], width, height);
-            }
-        }
+    public String toString() {
+        return fruits.name();
     }
-    private void foodCollected(final SpriteBatch batch){
-        /*BORRANDO LAS FRUTAS DEL TRONCO DEL ÁRBOL POSICIÓN A POSICIÓN ALCANZADA*/
-        for(int i = food.length-1; i>GameHandler.animalCounter; i--) {
-            batch.draw(food[i], x, GameHandler.foodPositions[i], width, height);
-        }
 
-        /*CREANDO POSICIONES DESIGNADAS EN LA CASA DEL ÁRBOL PARA DIBUJAR AHÍ LAS FRUTAS*/
-        int z = 0;
-        int[] topFood_Y = new int[8], topFood_X = new int[8];
-        for(int axisY = 0 ; axisY < 4 ; axisY ++){
-            for(int axisX = 0; axisX < 2 ; axisX ++){
-                topFood_X [z] = axisX;
-                topFood_Y [z]= axisY;
-                z++;
-            }
-        }
-
-        /*DIBUJANDO LAS FRUTAS RECOGIDAS EN LAS POSICIONES DESIGNADAS POSICIÓN A POSICIÓN ALCANZADA*/
-        for(int i = -1; i< GameHandler.animalCounter; i++){
-            if(GameHandler.animalCounter == 8){
-                break;
-            }
-            int collectedFood_X = 57;
-            int collectedFood_Y = 87;
-            batch.draw(food[i + 1],
-                    collectedFood_X + (width * topFood_X[i+1]),
-                    (int)(collectedFood_Y + (1.4* height * topFood_Y[i+1])),
-                    width, height);
-
-        }
+    public void setPicked(boolean picked) {
+        isPicked = picked;
+        hitbox.setPosition(100, 100);
     }
 }

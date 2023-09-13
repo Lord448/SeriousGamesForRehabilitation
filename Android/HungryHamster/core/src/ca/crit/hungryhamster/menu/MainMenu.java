@@ -1,5 +1,6 @@
 package ca.crit.hungryhamster.menu;
 
+import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Camera;
@@ -347,6 +348,7 @@ public class MainMenu implements Screen{
                 if(!Objects.equals(fieldTime.getText(), "") && !Objects.equals(fieldSteps, "")) {
                     try {
                         GameHandler.numHouseSteps = Integer.parseInt(fieldSteps.getText().trim());
+                        GameHandler.countsToWin = GameHandler.numHouseSteps;
                         GameHandler.sessionTime = Integer.parseInt(fieldTime.getText().trim());
                         //Start the game
                         GameHandler.startGame = true;
