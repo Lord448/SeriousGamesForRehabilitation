@@ -75,13 +75,13 @@ public class Animal {
 
     //Quick and dirty
     private void checkKeyPressed(){
-        for(int i = GameHandler.minStep; i < GameHandler.countsToWin; i++) {
+        for(int i = GameHandler.minStep; i < GameHandler.countsToWin+GameHandler.extraStep; i++) {
             if(Gdx.input.isKeyJustPressed(GameHandler.key[i])) {
                 //Quick and dirty zone
                 if(isInHouse) {
                     if(i == nextPin) {
                         nextPin++;
-                        if(nextPin == GameHandler.countsToWin) {
+                        if(nextPin == GameHandler.countsToWin+GameHandler.extraStep) {
                             move = true;
                             isFinished = true;
                             isInHouse = false;
@@ -90,7 +90,7 @@ public class Animal {
                         System.out.println("CTW " + nextPin + " | " + (GameHandler.countsToWin));
                     }
                 }
-                //Quick and dirty zone
+                //Standard zone
                 if(i == nextPin){
                     nextPin++;
                     GameHandler.touchPins[i] = true;
