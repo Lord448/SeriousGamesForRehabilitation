@@ -95,7 +95,7 @@ public class GameScreen implements Screen {
     public void render(float deltaTime) {
         for(Food i : food) {
             if(Intersector.overlaps(animal.hitbox, i.hitbox)) {
-                System.out.println("Collide on " + i.toString());
+                System.out.println("Collide on " + i);
                 i.setPicked(true);
             }
         }
@@ -112,10 +112,6 @@ public class GameScreen implements Screen {
         /*CHARACTERS*/
         wizard.render(batch);
         animal.render(batch);
-        /*TEXT*/
-        if(GameHandler.animalCounter == GameHandler.countsToWin)
-            WinText.draw(batch);
-            //font.draw(batch, "¡Bien \nHecho!", 3, 50);
         batch.end();
     }
 

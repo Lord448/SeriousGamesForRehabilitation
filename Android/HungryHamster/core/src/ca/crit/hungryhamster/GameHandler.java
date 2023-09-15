@@ -56,8 +56,6 @@ public class GameHandler {
     //Global Constants
     public static final int DESKTOP_ENV = 0;
     public static final int MOBILE_ENV = 1;
-    public static final int REGION_MAX_LIM = 107;
-    public static final int REGION_MIN_LIM = 20;
     //Global variables
     public static int environment;
     public static int numHouseSteps = 11;
@@ -72,8 +70,6 @@ public class GameHandler {
     public static float effectsVolume = musicVolume / 5;
     public static boolean wizardSpell  = false;
     public static float[] foodPositions;
-    public static float[] animalPositions;
-    public static int animalCounter = -1;
     public static int countsToWin = numHouseSteps;
     public static boolean startGame = false;
     public static boolean[] touchPins = new boolean[32];

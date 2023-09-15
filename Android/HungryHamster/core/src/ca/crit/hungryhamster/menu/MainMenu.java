@@ -424,11 +424,11 @@ public class MainMenu implements Screen{
                         GameHandler.maxStep = Integer.parseInt(fieldMaxStep.getText().trim());
                         GameHandler.minStep = Integer.parseInt(fieldMinStep.getText().trim());
                         GameHandler.numHouseSteps = GameHandler.maxStep - GameHandler.minStep;
-                        GameHandler.countsToWin = GameHandler.numHouseSteps-1;
                         GameHandler.sessionTime = Float.parseFloat(fieldTime.getText().trim());
                         if(!fieldExtra.getText().equals("")) {
                             GameHandler.extraStep = Integer.parseInt(fieldExtra.getText().trim());
                         }
+                        GameHandler.countsToWin = GameHandler.numHouseSteps + GameHandler.extraStep;
                         //Start the game
                         if(fieldCheck(fieldMaxStep, fieldMinStep, lblError))
                             GameHandler.startGame = true;
