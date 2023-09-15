@@ -1,5 +1,6 @@
 package ca.crit.hungryhamster.main;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
@@ -38,6 +39,16 @@ public class GameText {
         x = 0;
         y = 0;
         font = new BitmapFont(fontFile, imageFile, flip);
+        font.getData().setScale(scaleX, scaleY);
+    }
+
+    public GameText(String text, float x, float y) {
+        this.text = text;
+        this.x =  x;
+        this.y = y;
+        scaleX = 0.16f;
+        scaleY = 0.38f;
+        font = new BitmapFont(Gdx.files.internal("Fonts/logros.fnt"), Gdx.files.internal("Fonts/logros.png"), false);
         font.getData().setScale(scaleX, scaleY);
     }
 

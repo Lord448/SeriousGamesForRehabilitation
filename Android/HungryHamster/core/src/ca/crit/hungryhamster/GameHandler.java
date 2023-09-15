@@ -52,7 +52,7 @@ public class GameHandler {
     public static final int DEBUG_MENU = 1;
     public static final int DEBUG_DB = 2;
     public static final int DEBUG_NONE = 3;
-    public static final int DEBUG_MODE = DEBUG_GAME; //Debug constant
+    public static final int DEBUG_MODE = DEBUG_NONE; //Debug constant
     //Global Constants
     public static final int DESKTOP_ENV = 0;
     public static final int MOBILE_ENV = 1;
@@ -61,7 +61,10 @@ public class GameHandler {
     //Global variables
     public static int environment;
     public static int numHouseSteps = 11;
-    public static int sessionTime;
+    public static int maxStep;
+    public static int minStep;
+    public static int extraStep = 0;
+    public static float sessionTime;
     public static final double animHysteresis = 0.30;
     public static int WORLD_WIDTH = 72;
     public static int WORLD_HEIGHT = 128;
@@ -71,8 +74,7 @@ public class GameHandler {
     public static float[] foodPositions;
     public static float[] animalPositions;
     public static int animalCounter = -1;
-    public static int countsToWin = numHouseSteps-1;
-    public static int fruitCounter = 0;
+    public static int countsToWin = numHouseSteps;
     public static boolean startGame = false;
     public static boolean[] touchPins = new boolean[32];
     public static String playerID;

@@ -82,7 +82,7 @@ public class Animal {
                     if(y >= positions[GameHandler.animalCounter+1] - GameHandler.animHysteresis) {
                         GameHandler.animalPositions[i] = y;
                         GameHandler.animalCounter++;
-                        System.out.println(GameHandler.animalCounter + " | " + GameHandler.countsToWin);
+                        System.out.println(GameHandler.animalCounter + " | " + (GameHandler.countsToWin));
                         if(GameHandler.animalCounter == GameHandler.countsToWin) { //Finish the session
                             winSound();
                         }
