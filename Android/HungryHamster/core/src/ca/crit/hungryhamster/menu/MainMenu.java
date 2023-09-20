@@ -69,7 +69,7 @@ public class MainMenu implements Screen{
         whoPlaysText = new GameText("¿Quién juega?", 16, 115);
         whoPlaysText.setScales(0.15f, 0.38f);
         registerText = new GameText("Registro", 23, 115);
-        configText = new GameText("Configura", 20, 120);
+        configText = new GameText("Configura", 20, 125);
         //clickButtonSound = Gdx.audio.newSound(Gdx.files.internal("Sounds"));
         menuState = MenuState.INIT;
     }
@@ -187,7 +187,7 @@ public class MainMenu implements Screen{
 
     private void loginMenuConstruct() {
         //Labels
-        Label lblID = new Label("No.Carnet:", skin);
+        Label lblID = new Label("No. Carnet:", skin);
         Label lblError = new Label("", skin);
         //Text Fields
         TextField idField = new TextField("", skin);
@@ -213,7 +213,7 @@ public class MainMenu implements Screen{
                     menuState = MenuState.CONFIG;
                 }
                 else {
-                    lblError.setText("Coloca un ID");
+                    lblError.setText("Coloca un No. de Carnet");
                 }
             }
         });
@@ -367,27 +367,31 @@ public class MainMenu implements Screen{
     }
     private void configMenuConstruct() {
         final int fieldWidth = 200;
-        final int fieldHeight = 54;
+        final int fieldHeight = 50;
         final int btnWidth = 150;
-        final int btnHeight = 60;
+        final int btnHeight = 50;
+        final String initStringTime = "1.00";
         //Labels
         Label lblMaxStep = new Label("Escalon superior", skin);
         Label lblMinStep = new Label("Escalon inferior", skin);
         Label lblTime = new Label("Tiempo (Mins)", skin);
+        Label lblReps = new Label("Repeticiones", skin);
         Label lblError = new Label("", skin);
         //Text Fields
         TextField fieldMaxStep = new TextField("10", skin);
         TextField fieldMinStep = new TextField("0", skin);
-        TextField fieldTime = new TextField("1.00", skin);
+        TextField fieldTime = new TextField(initStringTime, skin);
+        TextField fieldReps = new TextField("Libre", skin);
         TextField fieldExtra = new TextField("", skin);
         fieldMaxStep.setAlignment(Align.center);
         fieldMinStep.setAlignment(Align.center);
         fieldTime.setAlignment(Align.center);
+        fieldReps.setAlignment(Align.center);
         fieldExtra.setAlignment(Align.center);
         //Buttons
         TextButton btnPlay = new TextButton("Jugar", skin);
         TextButton btnReturn = new TextButton("Regresar", skin);
-        Button[] btnArrows = new Button[8];
+        Button[] btnArrows = new Button[10];
         for(int i = 0; i < btnArrows.length; i+=2) { //Construct for btnArrows
             btnArrows[i] = new Button(shadeSkin, "left");
             btnArrows[i+1] = new Button(shadeSkin, "right");
@@ -398,11 +402,16 @@ public class MainMenu implements Screen{
         Table lowerArrowsTable = new Table();
         Table timeArrowsTable = new Table();
         Table extraArrowsTable = new Table();
+        Table repsArrowsTable = new Table();
+        Table handCheckTable = new Table();
         //Tables characteristics
         mainTable.setFillParent(true);
-        mainTable.setPosition(0, -40);
+        mainTable.setPosition(0, -25);
         //Checkboxes
         CheckBox cbExtraFruit = new CheckBox("Fruta extra", shadeSkin);
+        CheckBox cbRightHand = new CheckBox("Mano derecha", shadeSkin);
+        CheckBox cbLeftHand = new CheckBox("Mano izquierda", shadeSkin);
+        CheckBox cbBothHands = new CheckBox("Ambas manos", shadeSkin);
         //Trying to rotate
         /*
         for(Button i : btnArrows) {
@@ -419,19 +428,32 @@ public class MainMenu implements Screen{
         btnPlay.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                if(!Objects.equals(fieldTime.getText(), "") && !Objects.equals(fieldMaxStep, "")) {
+                if(!fieldTime.getText().equalsIgnoreCase("") && !fieldTime.getText().equalsIgnoreCase("")) {
                     try {
+                        boolean isAllCBChecked = cbBothHands.isChecked() || cbLeftHand.isChecked() || cbRightHand.isChecked();
+                        boolean notReachingMaxSteps = true;
+
                         GameHandler.maxStep = Integer.parseInt(fieldMaxStep.getText().trim());
                         GameHandler.minStep = Integer.parseInt(fieldMinStep.getText().trim());
                         GameHandler.numHouseSteps = GameHandler.maxStep - GameHandler.minStep;
                         GameHandler.sessionTime = Float.parseFloat(fieldTime.getText().trim());
+                        if(fieldReps.getText().equalsIgnoreCase("libre"))
+                            GameHandler.sessionReps = 0;
+                        else
+                            GameHandler.sessionReps = Integer.parseInt(fieldReps.getText().trim());
                         if(!fieldExtra.getText().equals("")) {
                             GameHandler.extraStep = Integer.parseInt(fieldExtra.getText().trim());
                         }
                         GameHandler.countsToWin = GameHandler.numHouseSteps + GameHandler.extraStep;
+                        if(cbExtraFruit.isChecked())
+                            notReachingMaxSteps = (GameHandler.maxStep + GameHandler.extraStep) < GameHandler.LADDER_MAX_STEPS;
                         //Start the game
-                        if(fieldCheck(fieldMaxStep, fieldMinStep, lblError))
+                        if(fieldCheck(fieldMaxStep, fieldMinStep, lblError) && isAllCBChecked && notReachingMaxSteps)
                             GameHandler.startGame = true;
+                        else if(!isAllCBChecked)
+                            lblError.setText("Seleccione que manos se usaran");
+                        else if(!notReachingMaxSteps)
+                            lblError.setText("No puede colocar tantos escalones extras");
                     }
                     catch (NumberFormatException ex) {
                         lblError.setText("Inserte numeros porfavor");
@@ -443,12 +465,14 @@ public class MainMenu implements Screen{
         //Making the listeners of the arrow buttons
         for(int i = 0; i < btnArrows.length; i+=2) {
             int finalI = i; //In order to avoid memory leaks
+            final boolean[] isTime = new boolean[1];
             btnArrows[i].addListener(new ChangeListener() { //Up
                 @Override
                 public void changed(ChangeEvent event, Actor actor) {
                     final DecimalFormat df = new DecimalFormat("0.00");
                     int counter;
                     float time;
+                    isTime[0] = false;
                     try {
                         if(finalI < 2) {
                             counter = Integer.parseInt(fieldMaxStep.getText().trim());
@@ -461,24 +485,34 @@ public class MainMenu implements Screen{
                             time = Float.parseFloat(fieldTime.getText().trim());
                             time += 0.1f;
                             fieldTime.setText(String.valueOf(df.format(time)));
+                            isTime[0] = true;
                         }
                         else if (finalI < 6){
                             counter = Integer.parseInt(fieldMinStep.getText().trim());
                             counter++;
                             fieldMinStep.setText(String.valueOf(counter));
                         }
-                        else {
+                        else if (finalI < 8){
                             counter = Integer.parseInt(fieldExtra.getText().trim());
                             counter++;
-                            if (counter >= 3)
-                                counter = 3;
                             if(cbExtraFruit.isChecked())
                                 fieldExtra.setText(String.valueOf(counter));
+                        }
+                        else {
+                            if(fieldReps.getText().trim().equalsIgnoreCase("libre"))
+                                counter = 0;
+                            else
+                                counter = Integer.parseInt(fieldReps.getText().trim());
+                            counter++;
+                            fieldReps.setText(String.valueOf(counter));
                         }
                         lblError.setText("");
                     }
                     catch (NumberFormatException exception) {
-                        lblError.setText("Please select a number");
+                        if(isTime[0])
+                            fieldTime.setText(initStringTime);
+                        else
+                            lblError.setText("Please select a number");
                     }
                     fieldCheck(fieldMaxStep, fieldMinStep, lblError);
                 }
@@ -489,6 +523,7 @@ public class MainMenu implements Screen{
                     final DecimalFormat df = new DecimalFormat("0.00");
                     int counter;
                     float time;
+                    isTime[0] = false;
                     try {
                         if(finalI < 2) {
                             counter = Integer.parseInt(fieldMaxStep.getText().trim());
@@ -504,6 +539,7 @@ public class MainMenu implements Screen{
                             if(time <= 0)
                                 time = 0;
                             fieldTime.setText(String.valueOf(df.format(time)));
+                            isTime[0] = true;
                         }
                         else if (finalI < 6){
                             counter = Integer.parseInt(fieldMinStep.getText().trim());
@@ -512,7 +548,7 @@ public class MainMenu implements Screen{
                                 counter = 0;
                             fieldMinStep.setText(String.valueOf(counter));
                         }
-                        else {
+                        else if(finalI < 8){
                             counter = Integer.parseInt(fieldExtra.getText().trim());
                             counter--;
                             if(counter <= 1)
@@ -520,10 +556,25 @@ public class MainMenu implements Screen{
                             if(cbExtraFruit.isChecked())
                                 fieldExtra.setText(String.valueOf(counter));
                         }
+                        else {
+                            if(fieldReps.getText().trim().equalsIgnoreCase("libre"))
+                                counter = 0;
+                            else
+                                counter = Integer.parseInt(fieldReps.getText().trim());
+                            counter--;
+                            if (counter <= 0) {
+                                fieldReps.setText("Libre");
+                            }
+                            else
+                                fieldReps.setText(String.valueOf(counter));
+                        }
                         lblError.setText("");
                     }
                     catch (NumberFormatException exception) {
-                        lblError.setText("Porfavor coloque un numero valido");
+                        if(isTime[0])
+                            fieldTime.setText(initStringTime);
+                        else
+                            lblError.setText("Porfavor coloque un numero valido");
                     }
                     fieldCheck(fieldMaxStep, fieldMinStep, lblError);
                 }
@@ -550,6 +601,42 @@ public class MainMenu implements Screen{
                 }
             }
         });
+        cbLeftHand.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                if(cbLeftHand.isChecked()) {
+                    if(cbRightHand.isChecked())
+                        cbRightHand.setChecked(false);
+                    else if(cbBothHands.isChecked())
+                        cbBothHands.setChecked(false);
+                    GameHandler.playerWorkingHand = GameHandler.LEFT_HAND;
+                }
+            }
+        });
+        cbRightHand.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                if(cbRightHand.isChecked()) {
+                    if(cbLeftHand.isChecked())
+                        cbLeftHand.setChecked(false);
+                    else if(cbBothHands.isChecked())
+                        cbBothHands.setChecked(false);
+                    GameHandler.playerWorkingHand = GameHandler.RIGHT_HAND;
+                }
+            }
+        });
+        cbBothHands.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                if(cbBothHands.isChecked()) {
+                    if (cbLeftHand.isChecked())
+                        cbLeftHand.setChecked(false);
+                    else if (cbRightHand.isChecked())
+                        cbRightHand.setChecked(false);
+                    GameHandler.playerWorkingHand = GameHandler.BOTH_HANDS;
+                }
+            }
+        });
         //Table Interns
         mainTable.add(lblError).padBottom(0).colspan(3);
         mainTable.row();
@@ -566,12 +653,12 @@ public class MainMenu implements Screen{
             timeArrowsTable.add(btnArrows[2]); //Up
             timeArrowsTable.row();
             timeArrowsTable.add(btnArrows[3]); //Down
-        mainTable.add(timeArrowsTable);
+        mainTable.add(timeArrowsTable).left();
         mainTable.row();
         mainTable.add(lblMinStep);
         mainTable.add(new Actor()); //Not null member for blank space
         mainTable.add(cbExtraFruit);
-        mainTable.row().padBottom(20);
+        mainTable.row();
         mainTable.add(fieldMinStep).width(fieldWidth).height(fieldHeight);
             lowerArrowsTable.add(btnArrows[4]); //Up
             lowerArrowsTable.row();
@@ -582,6 +669,19 @@ public class MainMenu implements Screen{
             extraArrowsTable.row();
             extraArrowsTable.add(btnArrows[7]);
         mainTable.add(extraArrowsTable).left();
+        mainTable.row();
+        mainTable.add(lblReps);
+        mainTable.row().padBottom(20);
+        mainTable.add(fieldReps).width(fieldWidth).height(fieldHeight);
+            repsArrowsTable.add(btnArrows[8]);
+            repsArrowsTable.row();
+            repsArrowsTable.add(btnArrows[9]);
+        mainTable.add(repsArrowsTable).left();
+            handCheckTable.add(cbLeftHand);
+            handCheckTable.add(cbRightHand).padLeft(5);
+            handCheckTable.row();
+            handCheckTable.add(cbBothHands).padTop(10).center().colspan(2);
+        mainTable.add(handCheckTable);
         mainTable.row().padBottom(20);
         mainTable.add(btnPlay).width(btnWidth).height(btnHeight).colspan(3);
         mainTable.row();
