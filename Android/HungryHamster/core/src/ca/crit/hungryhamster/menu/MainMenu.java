@@ -187,7 +187,7 @@ public class MainMenu implements Screen{
 
     private void loginMenuConstruct() {
         //Labels
-        Label lblID = new Label("ID", skin);
+        Label lblID = new Label("No.Carnet:", skin);
         Label lblError = new Label("", skin);
         //Text Fields
         TextField idField = new TextField("", skin);
@@ -230,7 +230,7 @@ public class MainMenu implements Screen{
         //Table Interns
         table.add(lblError).padBottom(10).colspan(2).center();
         table.row();
-        table.add(lblID).width(30).height(50).padBottom(10).right();
+        table.add(lblID).width(30).height(50).padBottom(10).right().padRight(60);
         table.add(idField).width(300).height(50).padBottom(10).padRight(130);
         table.row().padBottom(100);
         table.add(btnNext).width(150).height(50).colspan(2);
@@ -243,14 +243,14 @@ public class MainMenu implements Screen{
     }
 
     private void registerMenuConstruct() {
-        final int lblPadRight = 120;
+        final int lblPadRight = 100;
         final int fieldPadRight = 100;
         final int fieldHeight = 50, fieldWidth = 300;
         //Labels
         Label lblName = new Label("Nombre:", skin);
         Label lblAge = new Label("Edad:", skin);
-        Label lblID = new Label("ID:", skin);
-        Label lblGender = new Label("Genero:", skin);
+        Label lblID = new Label("No.Carnet:", skin);
+        Label lblGender = new Label("Sexo:", skin);
         Label lblError = new Label("", skin);
         //Text Fields
         TextField fieldName = new TextField("", skin);
@@ -259,8 +259,8 @@ public class MainMenu implements Screen{
         //Buttons
         TextButton btnAccept = new TextButton("Aceptar", skin);
         TextButton btnReturn = new TextButton("Regresar", skin);
-        TextButton btnMale = new TextButton("Hombre", skin, "toggle");
-        TextButton btnFemale = new TextButton("Mujer", skin, "toggle");
+        TextButton btnMale = new TextButton("Masculino", skin, "toggle");
+        TextButton btnFemale = new TextButton("Femenino", skin, "toggle");
         //Listeners
         btnAccept.addListener(new ChangeListener() {
             @Override
@@ -329,7 +329,7 @@ public class MainMenu implements Screen{
         table.add(lblAge).height(50).width(75).padLeft(lblPadRight).right();
         table.add(fieldAge).colspan(2).height(fieldHeight).width(fieldWidth).colspan(2).padRight(fieldPadRight).left();
         table.row();
-        table.add(lblID).height(50).width(75).padLeft(lblPadRight).right();
+        table.add(lblID).height(50).width(75).padLeft(lblPadRight).right().padRight(10);
         table.add(fieldID).height(fieldHeight).width(fieldWidth).colspan(2).padRight(fieldPadRight).left();
         table.row().padBottom(50);
         table.add(lblGender).height(50).width(75).padLeft(lblPadRight).right();
