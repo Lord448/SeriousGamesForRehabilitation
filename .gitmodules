@@ -1,3 +1,6 @@
 [submodule "Android/HungryHamster"]
 	path = Android/HungryHamster
 	url = git@github.com:Lord448/HungryHamster.git
+[submodule "Android/TreasureHunter"]
+	path = Android/TreasureHunter
+	url = git@github.com:Lord448/TreasureHunter.git
