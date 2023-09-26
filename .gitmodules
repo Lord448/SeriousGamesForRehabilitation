@@ -4,3 +4,6 @@
 [submodule "Android/TreasureHunter"]
 	path = Android/TreasureHunter
 	url = git@github.com:Lord448/TreasureHunter.git
+[submodule "GeneralResources/Java/RojoBLE"]
+	path = GeneralResources/Java/RojoBLE
+	url = git@github.com:Lord448/RojoBLE.git
