@@ -14,8 +14,8 @@ import java.util.UUID;
 
 public class AndroidLauncher extends AndroidApplication {
 
-	public static final UUID txChUUID = UUID.fromString("058804de-0a45-11ee-be56-0242ac120002");
-	public static final UUID rxChUUID = UUID.fromString("006e861c-0a45-11ee-be56-0242ac120002");
+	public final UUID txChUUID = UUID.fromString("058804de-0a45-11ee-be56-0242ac120002");
+	public final UUID rxChUUID = UUID.fromString("006e861c-0a45-11ee-be56-0242ac120002");
 	private static final String TAG = "AndroidLauncher";
 	private static final String deviceName = "Ladder";
 	private BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();

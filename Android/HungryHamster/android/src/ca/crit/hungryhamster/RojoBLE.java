@@ -76,7 +76,7 @@ public class RojoBLE {
                     characteristicUUID,
                     BluetoothGattCharacteristic.PROPERTY_WRITE,
                     BluetoothGattCharacteristic.PERMISSION_WRITE);
-            GattCallback = new RojoGattCallback(mCharacteristic, "TRY".getBytes());
+            GattCallback = new RojoGattCallback(mCharacteristic, "TRY".getBytes(), characteristicUUID);
             Log.i(TAG, "Write characteristic created");
         }
         else if(this.typeCharacteristic == ROJO_TYPE_NOTIFY) {
@@ -84,7 +84,7 @@ public class RojoBLE {
                     characteristicUUID,
                     BluetoothGattCharacteristic.PROPERTY_NOTIFY,
                     BluetoothGattCharacteristic.PERMISSION_WRITE);
-            GattCallback = new RojoGattCallback(mCharacteristic, null);
+            GattCallback = new RojoGattCallback(mCharacteristic, null, characteristicUUID);
             GattCallback.setOnCharacteristicChangedListener(this::onCharacteristicNotificationListener);
             Log.i(TAG, "Notify characteristic created");
         }
@@ -115,7 +115,7 @@ public class RojoBLE {
                     characteristicUUID,
                     BluetoothGattCharacteristic.PROPERTY_WRITE,
                     BluetoothGattCharacteristic.PERMISSION_WRITE);
-            GattCallback = new RojoGattCallback(mCharacteristic, "TRY".getBytes());
+            GattCallback = new RojoGattCallback(mCharacteristic, "TRY".getBytes(), characteristicUUID);
             Log.i(TAG, "Write characteristic created");
         }
         else if(this.typeCharacteristic == ROJO_TYPE_NOTIFY) {
@@ -123,7 +123,7 @@ public class RojoBLE {
                     characteristicUUID,
                     BluetoothGattCharacteristic.PROPERTY_NOTIFY,
                     BluetoothGattCharacteristic.PERMISSION_WRITE);
-            GattCallback = new RojoGattCallback(mCharacteristic, null);
+            GattCallback = new RojoGattCallback(mCharacteristic, null, characteristicUUID);
             GattCallback.setOnCharacteristicChangedListener(this::onCharacteristicNotificationListener);
             Log.i(TAG, "Notify characteristic created");
         }

@@ -124,7 +124,7 @@ public class Animal {
                         }
                         System.out.println("CTW " + animalCounter + " | " + (GameHandler.countsToWin));
                         if(animalCounter == GameHandler.countsToWin) {
-                            winSound();
+                            GameSounds.win();
                             isFinished = true;
                             isInHouse = false;
                         }

@@ -1,5 +1,6 @@
 package ca.crit.hungryhamster.main;
 
+import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Texture;
@@ -52,7 +53,7 @@ public class Wizard {
         for(int i = 0; i < GameHandler.key.length; i++) {
             if(Gdx.input.isKeyJustPressed(GameHandler.key[i])){
                 GameHandler.wizardSpell = true;
-                sounds();
+                GameSounds.spell();
             }
 
         }

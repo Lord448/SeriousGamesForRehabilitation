@@ -2,15 +2,13 @@ package ca.crit.hungryhamster;
 
 
 import com.badlogic.gdx.Game;
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
-
-import java.util.Arrays;
 
 import ca.crit.hungryhamster.main.GameScreen;
-import ca.crit.hungryhamster.main.Sounds;
+import ca.crit.hungryhamster.main.GameSounds;
 import ca.crit.hungryhamster.menu.MainMenu;
 
 public class Main_hungryHamster extends Game {
+	private GameSounds gameSounds;
 	private MainMenu mainMenu;
 	private GameScreen gameScreen;
 
@@ -32,8 +30,8 @@ public class Main_hungryHamster extends Game {
 		}
 
 		//Game sounds
-		Sounds sounds = new Sounds();
-		Sounds.create();
+		gameSounds = new GameSounds();
+		gameSounds.create();
 	}
 
 	@Override
@@ -48,7 +46,7 @@ public class Main_hungryHamster extends Game {
 
 	@Override
 	public void dispose () {
-		Sounds.dispose();
+		gameSounds.dispose();
 		gameScreen.dispose();
 	}
 

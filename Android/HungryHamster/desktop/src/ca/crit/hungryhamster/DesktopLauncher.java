@@ -8,7 +8,7 @@ import java.util.Arrays;
 // Please note that on macOS your application needs to be started with the -XstartOnFirstThread JVM argument
 public class DesktopLauncher {
 	public static void main (String[] arg) {
-		GameHandler.init(0.0f, GameHandler.DESKTOP_ENV);
+		GameHandler.init(0.5f, GameHandler.DESKTOP_ENV);
 		Lwjgl3ApplicationConfiguration config = new Lwjgl3ApplicationConfiguration();
 		config.setForegroundFPS(60);
 		config.setTitle("HungryHamster");

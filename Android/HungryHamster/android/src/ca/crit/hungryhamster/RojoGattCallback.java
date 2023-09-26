@@ -10,17 +10,20 @@ import android.bluetooth.BluetoothProfile;
 import android.os.Build;
 import android.util.Log;
 
+import java.util.UUID;
+
 /**
  * @brief Implementation of the BluetoothGattCallback and overrides some methods
  * @note You will need to create an object per characteristic
  */
 @SuppressLint("MissingPermission")
 public class RojoGattCallback extends BluetoothGattCallback {
-    private static final String TAG = "GattCallback";
-    private BluetoothGattCharacteristic mCharacteristic;
+    private static final String TAG = "RojoGattCallback";
+    private final UUID chUUID;
+    private final byte[] dataBuffer;
+    private BluetoothGattCharacteristic characteristic;
     private BluetoothGattDescriptor mDescriptor;
     private OnCharacteristicChangedListener mOnCharacteristicChangedListener;
-    private byte[] mDataBuffer;
     private byte[] dataReceived;
 
     /**
@@ -29,9 +32,10 @@ public class RojoGattCallback extends BluetoothGattCallback {
      * @param dataBuffer The data buffer that will be sent to the characteristic in case it has the property "Write"
      * @note If dataBuffer its null the class will assume that the characteristic is a NOTIFY one
      */
-    public RojoGattCallback(BluetoothGattCharacteristic characteristic, byte[] dataBuffer) {
-        mCharacteristic = characteristic;
-        mDataBuffer = dataBuffer;
+    public RojoGattCallback(BluetoothGattCharacteristic characteristic, byte[] dataBuffer, UUID chUUID) {
+        this.chUUID = chUUID;
+        this.characteristic = characteristic;
+        this.dataBuffer = dataBuffer;
     }
 
     /**
@@ -41,8 +45,8 @@ public class RojoGattCallback extends BluetoothGattCallback {
      * @param mGatt Instance of the gatt class
      */
     private void readData(BluetoothGatt mGatt) {
-        if (mCharacteristic != null)
-            mGatt.readCharacteristic(mCharacteristic);
+        if (characteristic != null)
+            mGatt.readCharacteristic(characteristic);
         else
             Log.i(TAG, "Characteristic is null");
     }
@@ -81,10 +85,8 @@ public class RojoGattCallback extends BluetoothGattCallback {
         super.onServicesDiscovered(gatt, status);
         if (status == BluetoothGatt.GATT_SUCCESS) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                if(mCharacteristic.getUuid().equals(AndroidLauncher.rxChUUID))
-                    Log.i(TAG, "Starting search of services in TX CHAR");
-                else if(mCharacteristic.getUuid().equals(AndroidLauncher.txChUUID))
-                    Log.i(TAG, "Starting search of services in RX CHAR");
+                if(characteristic.getUuid().equals(chUUID))
+                    Log.i(TAG, "Starting search of services in CHAR");
             }
             else
             {
@@ -92,14 +94,14 @@ public class RojoGattCallback extends BluetoothGattCallback {
             }
             for(BluetoothGattService service : gatt.getServices()) {
                 Log.i(TAG, "For service: " + service.getUuid().toString());
-                BluetoothGattCharacteristic temporalCharacteristic = service.getCharacteristic(mCharacteristic.getUuid());
+                BluetoothGattCharacteristic temporalCharacteristic = service.getCharacteristic(characteristic.getUuid());
                 if (temporalCharacteristic != null) {
                     //For write characteristics
-                    if(mDataBuffer != null) {
-                        temporalCharacteristic.setValue(mDataBuffer);
+                    if(dataBuffer != null) {
+                        temporalCharacteristic.setValue(dataBuffer);
                         if(gatt.writeCharacteristic(temporalCharacteristic)) {
                             Log.i(TAG, "Characteristic Selected: " + temporalCharacteristic.getUuid().toString());
-                            mCharacteristic = temporalCharacteristic;
+                            characteristic = temporalCharacteristic;
                             return;
                         }
                         else {
@@ -111,7 +113,7 @@ public class RojoGattCallback extends BluetoothGattCallback {
                         if(descriptor != null) {
                             Log.i(TAG, "Characteristic can handle notifies: " + temporalCharacteristic.getUuid());
                             Log.d(TAG, "Descriptor UUID founded: " + descriptor.getUuid());
-                            mCharacteristic = temporalCharacteristic;
+                            characteristic = temporalCharacteristic;
                             mDescriptor = descriptor;
                             enableNotifications(gatt);
                         }
@@ -205,9 +207,9 @@ public class RojoGattCallback extends BluetoothGattCallback {
      * @param mGatt gatt class instance
      */
     public boolean sendData(byte[] mDataBuffer, BluetoothGatt mGatt) {
-        if(mCharacteristic != null) {
-            mCharacteristic.setValue(mDataBuffer);
-            boolean success = mGatt.writeCharacteristic(mCharacteristic);
+        if(characteristic != null) {
+            characteristic.setValue(mDataBuffer);
+            boolean success = mGatt.writeCharacteristic(characteristic);
             if(success) {
                 Log.i(TAG, "Data send successfully");
                 return true;
@@ -258,7 +260,7 @@ public class RojoGattCallback extends BluetoothGattCallback {
             Log.e(TAG, "Gatt object is null");
             return;
         }
-        else if(mCharacteristic == null) {
+        else if(characteristic == null) {
             Log.e(TAG, "Characteristic object is null");
             return;
         }
@@ -267,13 +269,13 @@ public class RojoGattCallback extends BluetoothGattCallback {
             return;
         }
         // Check if characteristic has NOTIFY property
-        if ((mCharacteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_NOTIFY) == 0) {
+        if ((characteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_NOTIFY) == 0) {
             Log.e(TAG, "Characteristic does not have NOTIFY property");
             return;
         }
         // Enable local notifications
-        Log.i(TAG, "For characteristic: " + mCharacteristic.getUuid().toString());
-        gatt.setCharacteristicNotification(mCharacteristic, true);
+        Log.i(TAG, "For characteristic: " + characteristic.getUuid().toString());
+        gatt.setCharacteristicNotification(characteristic, true);
         // Enable remote notifications
         mDescriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
         gatt.writeDescriptor(mDescriptor);
