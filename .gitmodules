@@ -7,3 +7,6 @@
 [submodule "GeneralResources/Java/RojoBLE"]
 	path = GeneralResources/Java/RojoBLE
 	url = git@github.com:Lord448/RojoBLE.git
+[submodule "GeneralResources/RojoBLE"]
+	path = GeneralResources/RojoBLE
+	url = git@github.com:Lord448/RojoBLE.git
