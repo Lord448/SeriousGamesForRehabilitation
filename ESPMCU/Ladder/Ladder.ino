@@ -5,9 +5,12 @@
 #include <BLEUtils.h>
 #include <BLE2902.h>
 
+#define TEST
+
 #define SERVER_NAME "Ladder"
 #define LED_PIN 2
-#define NUMBER_TOUCH_PINS 32
+
+#define LIMIT i < (sizeof(touchGPIO)/4)
 
 // See the following for generating UUIDs:
 // https://www.uuidgenerator.net/
@@ -24,6 +27,33 @@ BLECharacteristic *pTxCharacteristic;
 bool deviceConnected = false;
 bool oldDeviceConnected = false;
 char Buffer[4];
+const uint32_t touchGPIO[15] = {
+    4,
+    13,
+    14,
+    16,
+    17,
+    18,
+    19,
+    21,
+    22,
+    23,
+    25,
+    26,
+    27,
+    32,
+    33
+};
+
+static const char *doTransmit = "Transmit";
+static const char *stopTX = "Stop";
+static const char *sleepTX = "Sleep";
+static const char *wakeupTX = "Wake";
+
+struct bleRXFlags {
+    bool doTransmit;
+    bool sleep;
+}bleRXFlags;
 
 class MyServerCallbacks : public BLEServerCallbacks {
     void onConnect(BLEServer *pServer) {
@@ -43,20 +73,44 @@ class MyCallbacks : public BLECharacteristicCallbacks {
             for (int i = 0; i < rxValue.length(); i++)
                 Serial.print(rxValue[i]);
             Serial.print("\n");
-
-            //Process incoming data
+            
+            if(rxValue.compare(doTransmit) == 0) {
+                bleRXFlags.doTransmit = true;
+                Serial.println("doTransmit true");
+            }
+            else if(rxValue.compare(stopTX) == 0) {
+                bleRXFlags.doTransmit = false;
+                Serial.println("doTransmit false");    
+            }
+            else if(rxValue.compare(sleepTX) == 0) {
+                bleRXFlags.sleep = true;
+                Serial.println("sleep true");
+            }
+            else if(rxValue.compare(wakeupTX) == 0) {
+                bleRXFlags.sleep = false;
+                Serial.println("sleep false");
+            }
+            else
+                Serial.println("Data not Handled");
         }
     }
 };
+
 
 void setup()
 {
     Serial.begin(115200);
 
-    //Filling the array
-    //for(uint32_t Pins = 0; Pins < NUMBER_TOUCH_PINS; Pins++) {
-        //pinMode(Pins, INPUT);
-    //}
+#ifndef TEST
+    //Init flags structure
+    bool *pFlags = (bool *) &bleRXFlags;
+    for(uint32_t i = 0; i < sizeof(bleRXFlags); i++, pFlags++)
+        *pFlags = false;
+#endif
+
+    //Config Pins
+    for(uint32_t i = 0; LIMIT; i++)
+        pinMode(touchGPIO[i], INPUT);
 
     // Create the BLE Device
     BLEDevice::init(SERVER_NAME);
@@ -93,17 +147,22 @@ void setup()
 
 void loop()
 {
-    /*
-	for(uint32_t Pins = 0; Pins < NUMBER_TOUCH_PINS; Pins++) {
-        if(digitalRead(Pins) == 1) {
-            sprintf(Buffer, "T:%d", Pins);
-            if(deviceConnected)
+    //GPIO Read
+	for(uint32_t i = 0; LIMIT; i++) {
+        if(digitalRead(touchGPIO[i]) == 1) {
+            sprintf(Buffer, "T:%d", i);
+#ifndef TEST
+        if(deviceConnected && bleRXFlags.doTransmit)
+#else
+        if(deviceConnected)
+#endif
+            {
                 sendStringData(Buffer, pTxCharacteristic);
+            }
             Serial.println(Buffer);
         }
     }
-    */
-
+    
     // disconnecting
     if (!deviceConnected && oldDeviceConnected) {
         if(digitalRead(LED_PIN) == 1)
