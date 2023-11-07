@@ -1389,7 +1389,7 @@
     (effects (font (size 3 3) (thickness 1) bold) (justify left bottom))
     (uuid 1e8a32fd-ec3a-490c-a6d2-b35b784352e8)
   )
-  (text "2V When 3.2V (Discharge)" (at 149.225 94.615 0)
+  (text "1.5V When 3.2V (Discharge) //TODO Calcs" (at 149.225 94.615 0)
     (effects (font (size 1.27 1.27)) (justify left bottom))
     (uuid b8d1bfe8-5261-44c9-8c4e-fff1b1ae864b)
   )
