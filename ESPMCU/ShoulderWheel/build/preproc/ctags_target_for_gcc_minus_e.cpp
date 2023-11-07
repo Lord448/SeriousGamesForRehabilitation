@@ -5,9 +5,25 @@
 # 5 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino" 2
 # 6 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino" 2
 # 7 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino" 2
+# 8 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino" 2
+# 9 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino" 2
 
 //Sends the data no matter if the game is requesting information
-# 17 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+//!More battery consume if defined
+
+
+
+//#define WORKING_AXYS_Y
+//#define WORKING_AXYS_Z
+
+//#define UPSIDEDOWN_MOUNT
+
+
+
+
+
+
+
 // See the following for generating UUIDs:
 // https://www.uuidgenerator.net/
 
@@ -17,28 +33,39 @@
 
 void sendData(char *buffer, BLECharacteristic *pTXCharacteristic);
 void sendStringData(char *buffer, BLECharacteristic *pTXCharacteristic);
+void fatalError(void);
 
-int32_t rawAngle, pastAngle = 0;
-int32_t angle;
 BLEServer *pServer = 
-# 29 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino" 3 4
+# 37 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino" 3 4
                     __null
-# 29 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+# 37 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
                         ;
 BLECharacteristic *pTxCharacteristic;
+MPU6050 mpu(Wire);
+float rawAngle, pastAngle = 0;
+float angle;
 bool valueIsDiff = false;
 bool deviceConnected = false;
 bool oldDeviceConnected = false;
 static char Buffer[16];
 
+//Receive Strings
 static const char *doTransmit = "Transmit";
 static const char *stopTX = "Stop";
 static const char *sleepTX = "Sleep";
 static const char *wakeupTX = "Wake";
+static const char *Reset = "Reset";
+static const char *MPUStartCal = "MPUStartCal"; //Order to calibrate MPU
+//Send Strings
+static char *MPUError = "MPUError";
+static char *ResetSend = "ResetESP32";
+static char *MPUCal = "MPUCal"; //No Move MPU
+static char *MPUReady = "MPUReady";
 
 struct bleRXFlags {
     bool doTransmit;
     bool sleep;
+    bool mpuCal;
 }bleRXFlags;
 
 class MyServerCallbacks : public BLEServerCallbacks {
@@ -76,6 +103,15 @@ class MyCallbacks : public BLECharacteristicCallbacks {
                 bleRXFlags.sleep = false;
                 Serial.println("sleep false");
             }
+            else if(rxValue.compare(MPUStartCal) == 0) {
+                bleRXFlags.mpuCal = true;
+                Serial.println("mpuCal true");
+            }
+            else if(rxValue.compare(Reset) == 0) {
+                Serial.println("Reseting ESP32");
+                sendStringData(ResetSend, pTxCharacteristic);
+                ESP.restart();
+            }
             else
                 Serial.println("Data not Handled");
         }
@@ -85,6 +121,7 @@ class MyCallbacks : public BLECharacteristicCallbacks {
 void setup()
 {
     Serial.begin(115200);
+    Wire.begin();
 
 
 
@@ -123,6 +160,12 @@ void setup()
     // Start advertising
     pServer->getAdvertising()->start();
     Serial.println("Waiting a client connection to notify...");
+
+    byte status = mpu.begin();
+
+    if(status != 0)
+        fatalError();
+    mpuCalc();
 }
 
 void loop()
@@ -142,7 +185,7 @@ void loop()
         if(deviceConnected)
 
         {
-            sprintf(Buffer, "Angle:%d\n", angle);
+            sprintf(Buffer, "Angle:%3.2f\n", angle);
             sendStringData(Buffer, pTxCharacteristic);
         }
     }
@@ -163,24 +206,43 @@ void loop()
             digitalWrite(2, 1);
         oldDeviceConnected = deviceConnected;
     }
-
-
-
-
-
-
-
+    if(bleRXFlags.mpuCal) {
+        mpuCalc();
+        bleRXFlags.mpuCal = false;
+    }
     pastAngle = rawAngle;
 }
 
-void getData(int32_t *read) {
-    *read = analogRead(4);
+/**
+
+ * @brief Getting the mean value of the lectures (6 Lectures)
+
+ * 
+
+ * @param read: Value where is saved the mean
+
+ */
+# 216 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+void getData(float *read) {
+    float lectures = 0;
+    for(uint32_t i = 0; i < 6; i++) {
+
+        lectures += mpu.getAngleX();
+
+
+
+
+
+
+
+    }
+    *read = lectures/6;
 }
 
-void scaleData(int32_t *value, int32_t read) {
-    *value = (read * 360) / 4095; //12Bits
+void scaleData(float *value, float read) {
+    *value = read+360;
 
-    Serial.printf("rawAngle: %d, Angle: %d\n", rawAngle, *value);
+    Serial.printf("rawAngle: %3.2f, Angle: %3.2f\n", rawAngle, *value);
 
 }
 
@@ -195,7 +257,7 @@ void scaleData(int32_t *value, int32_t read) {
  * @param pTXCharacteristic Characteristic that will be modified
 
  */
-# 195 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+# 245 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
 void sendStringData(char *buffer, BLECharacteristic *pTXCharacteristic) {
     pTXCharacteristic -> setValue((uint8_t *)buffer, strlen(buffer));
     pTXCharacteristic -> notify();
@@ -213,7 +275,7 @@ void sendStringData(char *buffer, BLECharacteristic *pTXCharacteristic) {
  * @param pTXCharacteristic Characteristic that will be modified
 
  */
-# 207 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+# 257 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
 void sendData(char *buffer, BLECharacteristic *pTXCharacteristic) {
     char charTX;
     for(uint32_t i = 0; i <= strlen(buffer); i++) {
@@ -224,5 +286,27 @@ void sendData(char *buffer, BLECharacteristic *pTXCharacteristic) {
         pTXCharacteristic -> setValue((uint8_t *)&charTX, sizeof(uint8_t));
         pTXCharacteristic -> notify();
         delay(15); // bluetooth stack will go into congestion, if too many packets are sent, 10ms min
+    }
+}
+
+void mpuCalc(void) {
+    sendStringData(MPUCal, pTxCharacteristic);
+    Serial.println("MPU About to calibrate, no move");
+    delay(1000);
+
+
+
+    mpu.calcOffsets(); //Gyrometer and Accelerometer
+    Serial.println("MPU Calibrated");
+    sendStringData(MPUReady, pTxCharacteristic);
+}
+
+void fatalError(void) {
+    while(1) {
+        Serial.println("Fatal Error: Could not connect to MPU6050");
+        if(deviceConnected) {
+            sendStringData(MPUError, pTxCharacteristic);
+        }
+        delay(2000);
     }
 }

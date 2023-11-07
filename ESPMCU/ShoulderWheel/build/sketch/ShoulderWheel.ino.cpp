@@ -6,9 +6,18 @@
 #include <BLEServer.h>
 #include <BLEUtils.h>
 #include <BLE2902.h>
+#include <MPU6050_light.h>
+#include "Wire.h"
 
 //Sends the data no matter if the game is requesting information
+//!More battery consume if defined
 #define TEST
+
+#define WORKING_AXYS_X
+//#define WORKING_AXYS_Y
+//#define WORKING_AXYS_Z
+
+//#define UPSIDEDOWN_MOUNT
 
 #define SERVER_NAME "ShoulderWheel"
 #define LED_PIN 2
@@ -25,24 +34,35 @@
 
 void sendData(char *buffer, BLECharacteristic *pTXCharacteristic);
 void sendStringData(char *buffer, BLECharacteristic *pTXCharacteristic);
+void fatalError(void);
 
-int32_t rawAngle, pastAngle = 0;
-int32_t angle;
 BLEServer *pServer = NULL;
 BLECharacteristic *pTxCharacteristic;
+MPU6050 mpu(Wire);
+float rawAngle, pastAngle = 0;
+float angle;
 bool valueIsDiff = false;
 bool deviceConnected = false;
 bool oldDeviceConnected = false;
 static char Buffer[16];
 
+//Receive Strings
 static const char *doTransmit = "Transmit";
 static const char *stopTX = "Stop";
 static const char *sleepTX = "Sleep";
 static const char *wakeupTX = "Wake";
+static const char *Reset = "Reset";
+static const char *MPUStartCal = "MPUStartCal"; //Order to calibrate MPU
+//Send Strings
+static char *MPUError = "MPUError";
+static char *ResetSend = "ResetESP32";
+static char *MPUCal = "MPUCal"; //No Move MPU
+static char *MPUReady = "MPUReady";
 
 struct bleRXFlags {
     bool doTransmit;
     bool sleep;
+    bool mpuCal;
 }bleRXFlags;
 
 class MyServerCallbacks : public BLEServerCallbacks {
@@ -80,24 +100,36 @@ class MyCallbacks : public BLECharacteristicCallbacks {
                 bleRXFlags.sleep = false;
                 Serial.println("sleep false");
             }
+            else if(rxValue.compare(MPUStartCal) == 0) {
+                bleRXFlags.mpuCal = true;
+                Serial.println("mpuCal true");
+            }
+            else if(rxValue.compare(Reset) == 0) {
+                Serial.println("Reseting ESP32");
+                sendStringData(ResetSend, pTxCharacteristic);
+                ESP.restart();
+            }
             else
                 Serial.println("Data not Handled");
         }
     }
 };
 
-#line 87 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+#line 116 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
 void setup();
-#line 130 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+#line 166 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
 void loop();
-#line 178 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
-void getData(int32_t *read);
-#line 182 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
-void scaleData(int32_t *value, int32_t read);
-#line 87 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+#line 216 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+void getData(float *read);
+#line 232 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+void scaleData(float *value, float read);
+#line 270 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+void mpuCalc(void);
+#line 116 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
 void setup()
 {
     Serial.begin(115200);
+    Wire.begin();
 #ifndef TEST
     //Init flags structure
     bool *pFlags = (bool *) &bleRXFlags;
@@ -136,6 +168,12 @@ void setup()
     // Start advertising
     pServer->getAdvertising()->start();
     Serial.println("Waiting a client connection to notify...");
+    
+    byte status = mpu.begin();
+
+    if(status != 0)
+        fatalError();   
+    mpuCalc();
 }
 
 void loop()
@@ -155,7 +193,7 @@ void loop()
         if(deviceConnected)
 #endif
         {
-            sprintf(Buffer, "Angle:%d\n", angle);
+            sprintf(Buffer, "Angle:%3.2f\n", angle);
             sendStringData(Buffer, pTxCharacteristic);
         }
     }
@@ -176,24 +214,38 @@ void loop()
             digitalWrite(LED_PIN, 1);
         oldDeviceConnected = deviceConnected;
     }
-#ifndef TEST
-    //Check if the ESP32 has to enter in low energy mode
-    if(bleRXFlags.sleep){
-        Serial.println("Sleep ESP32");
-        bleRXFlags.sleep = false;
+    if(bleRXFlags.mpuCal) {
+        mpuCalc();
+        bleRXFlags.mpuCal = false;
     }
-#endif
     pastAngle = rawAngle;
 }
 
-void getData(int32_t *read) {
-    *read = analogRead(ANALOG_PIN);
+/**
+ * @brief Getting the mean value of the lectures (6 Lectures)
+ * 
+ * @param read: Value where is saved the mean
+ */
+void getData(float *read) {
+    float lectures = 0;
+    for(uint32_t i = 0; i < 6; i++) {
+#ifdef WORKING_AXYS_X
+        lectures += mpu.getAngleX();
+#elif defined(WORKING_AXYS_Y)
+        *lectures += mpu.getAngleY();
+#elif defined(WORKING_AXYS_Z)
+        *lectures += mpu.getAngleZ();
+#else
+        *lectures += mpu.getAngleX();
+#endif
+    }
+    *read = lectures/6;
 }
 
-void scaleData(int32_t *value, int32_t read) {
-    *value = (read * 360) / 4095; //12Bits
+void scaleData(float *value, float read) {
+    *value = read+360;
 #ifdef TEST
-    Serial.printf("rawAngle: %d, Angle: %d\n", rawAngle, *value);
+    Serial.printf("rawAngle: %3.2f, Angle: %3.2f\n", rawAngle, *value);
 #endif
 }
 
@@ -225,5 +277,27 @@ void sendData(char *buffer, BLECharacteristic *pTXCharacteristic) {
         pTXCharacteristic -> setValue((uint8_t *)&charTX, sizeof(uint8_t));
         pTXCharacteristic -> notify();
         delay(15); // bluetooth stack will go into congestion, if too many packets are sent, 10ms min
+    }
+}
+
+void mpuCalc(void) {
+    sendStringData(MPUCal, pTxCharacteristic);
+    Serial.println("MPU About to calibrate, no move");
+    delay(1000);
+#ifdef UPSIDEDOWN_MOUNT
+    mpu.upsideDownMounting = true;
+#endif
+    mpu.calcOffsets(); //Gyrometer and Accelerometer
+    Serial.println("MPU Calibrated");
+    sendStringData(MPUReady, pTxCharacteristic);
+}
+
+void fatalError(void) {
+    while(1) {
+        Serial.println("Fatal Error: Could not connect to MPU6050");
+        if(deviceConnected) {
+            sendStringData(MPUError, pTxCharacteristic);
+        }
+        delay(2000);
     }
 }

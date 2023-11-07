@@ -160,4 +160,7 @@
  /home/lord448/.arduino15/packages/esp32/hardware/esp32/2.0.9/libraries/BLE/src/BLEUtils.h \
  /home/lord448/.arduino15/packages/esp32/hardware/esp32/2.0.9/libraries/BLE/src/BLEServer.h \
  /home/lord448/.arduino15/packages/esp32/hardware/esp32/2.0.9/libraries/BLE/src/BLEUtils.h \
- /home/lord448/.arduino15/packages/esp32/hardware/esp32/2.0.9/libraries/BLE/src/BLE2902.h
+ /home/lord448/.arduino15/packages/esp32/hardware/esp32/2.0.9/libraries/BLE/src/BLE2902.h \
+ /home/lord448/Arduino/libraries/MPU6050_light/src/MPU6050_light.h \
+ /home/lord448/.arduino15/packages/esp32/hardware/esp32/2.0.9/libraries/Wire/src/Wire.h \
+ /home/lord448/.arduino15/packages/esp32/hardware/esp32/2.0.9/cores/esp32/esp32-hal.h

@@ -221,6 +221,8 @@
                 "/home/lord448/.arduino15/packages/esp32/hardware/esp32/2.0.9/cores/esp32",
                 "/home/lord448/.arduino15/packages/esp32/hardware/esp32/2.0.9/variants/esp32",
                 "/home/lord448/.arduino15/packages/esp32/hardware/esp32/2.0.9/libraries/BLE/src",
+                "/home/lord448/Arduino/libraries/MPU6050_light/src",
+                "/home/lord448/.arduino15/packages/esp32/hardware/esp32/2.0.9/libraries/Wire/src",
                 "/home/lord448/.arduino15/packages/esp32/tools/xtensa-esp32-elf-gcc/esp-2021r2-patch5-8.4.0/xtensa-esp32-elf/include/c++/8.4.0",
                 "/home/lord448/.arduino15/packages/esp32/tools/xtensa-esp32-elf-gcc/esp-2021r2-patch5-8.4.0/xtensa-esp32-elf/include/c++/8.4.0/xtensa-esp32-elf",
                 "/home/lord448/.arduino15/packages/esp32/tools/xtensa-esp32-elf-gcc/esp-2021r2-patch5-8.4.0/xtensa-esp32-elf/include/c++/8.4.0/backward",
