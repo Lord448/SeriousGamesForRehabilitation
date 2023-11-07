@@ -1,3 +1,18 @@
+/**
+ * @file ShoulderWheel.ino
+ * @author Pedro Rojo (pedroeroca@outook.com)
+ * @brief   Makes the connection and acquires the angle information with
+ *          a MPU6050 Sensor, for connections check the README.md, the ESP32
+ *          sends fixed strings to notifiy the mobile the current status of the
+ *          embedded device
+ * @version 0.1.0
+ * @date 2023-11-06
+ * 
+ * @copyright This Source Code Form is subject to the terms of the Mozilla Public
+              License, v. 2.0. If a copy of the MPL was not distributed with this
+              file, You can obtain one at https://mozilla.org/MPL/2.0/
+ * 
+ */
 #include <stdio.h>
 #include <string.h>
 #include <BLEDevice.h>
@@ -10,6 +25,9 @@
 //Sends the data no matter if the game is requesting information
 //!More battery consume if defined
 #define TEST
+
+//Configure the battery power notification
+#define BATT
 
 #define WORKING_AXYS_X
 //#define WORKING_AXYS_Y
@@ -25,15 +43,19 @@
 
 // See the following for generating UUIDs:
 // https://www.uuidgenerator.net/
-
 #define SERVICE_UUID           "0a6131ee-7c3a-11ee-b962-0242ac120002" // UART service UUID
 #define CHARACTERISTIC_UUID_RX "0f16c6ae-7c3a-11ee-b962-0242ac120002"
 #define CHARACTERISTIC_UUID_TX "131552ca-7c3a-11ee-b962-0242ac120002"
 
+//----------------------------------------------------------------------
+//                            PROTOTYPES
+//----------------------------------------------------------------------
 void sendData(char *buffer, BLECharacteristic *pTXCharacteristic);
 void sendStringData(char *buffer, BLECharacteristic *pTXCharacteristic);
 void fatalError(void);
-
+//----------------------------------------------------------------------
+//                          GLOBAL VARIABLES
+//----------------------------------------------------------------------
 BLEServer *pServer = NULL;
 BLECharacteristic *pTxCharacteristic;
 MPU6050 mpu(Wire);
@@ -43,26 +65,33 @@ bool valueIsDiff = false;
 bool deviceConnected = false;
 bool oldDeviceConnected = false;
 static char Buffer[16];
-
-//Receive Strings
+//----------------------------------------------------------------------
+//                          RECEIVE STRINGS
+//----------------------------------------------------------------------
 static const char *doTransmit = "Transmit";
 static const char *stopTX = "Stop";
 static const char *sleepTX = "Sleep";
 static const char *wakeupTX = "Wake";
 static const char *Reset = "Reset";
 static const char *MPUStartCal = "MPUStartCal"; //Order to calibrate MPU
-//Send Strings
+//----------------------------------------------------------------------
+//                           SEND STRINGS
+//----------------------------------------------------------------------
 static char *MPUError = "MPUError";
 static char *ResetSend = "ResetESP32";
 static char *MPUCal = "MPUCal"; //No Move MPU
 static char *MPUReady = "MPUReady";
-
+//----------------------------------------------------------------------
+//                            BLE FLAGS
+//----------------------------------------------------------------------
 struct bleRXFlags {
     bool doTransmit;
     bool sleep;
     bool mpuCal;
 }bleRXFlags;
-
+//----------------------------------------------------------------------
+//                         SERVER CALLBACKS
+//----------------------------------------------------------------------
 class MyServerCallbacks : public BLEServerCallbacks {
     void onConnect(BLEServer *pServer) {
         deviceConnected = true;
@@ -73,6 +102,9 @@ class MyServerCallbacks : public BLEServerCallbacks {
     }
 };
 
+//----------------------------------------------------------------------
+//                     CHARACTERISTIC CALLBACKS
+//----------------------------------------------------------------------
 class MyCallbacks : public BLECharacteristicCallbacks {
     void onWrite(BLECharacteristic *pCharacteristic) {
         std::string rxValue = pCharacteristic -> getValue();
@@ -112,7 +144,9 @@ class MyCallbacks : public BLECharacteristicCallbacks {
         }
     }
 };
-
+//----------------------------------------------------------------------
+//                              SETUP
+//----------------------------------------------------------------------
 void setup()
 {
     Serial.begin(115200);
@@ -162,7 +196,9 @@ void setup()
         fatalError();   
     mpuCalc();
 }
-
+//----------------------------------------------------------------------
+//                                LOOP
+//----------------------------------------------------------------------
 void loop()
 {
 	getData(&rawAngle);
@@ -208,8 +244,12 @@ void loop()
     pastAngle = rawAngle;
 }
 
+
+//----------------------------------------------------------------------
+//                              METHODS
+//----------------------------------------------------------------------
 /**
- * @brief Getting the mean value of the lectures (6 Lectures)
+ * @brief Gets the mean value of the lectures (6 Lectures)
  * 
  * @param read: Value where is saved the mean
  */
@@ -228,14 +268,18 @@ void getData(float *read) {
     }
     *read = lectures/6;
 }
-
+/**
+ * @brief 
+ * 
+ * @param value 
+ * @param read 
+ */
 void scaleData(float *value, float read) {
     *value = read+360;
 #ifdef TEST
     Serial.printf("rawAngle: %3.2f, Angle: %3.2f\n", rawAngle, *value);
 #endif
 }
-
 /**
  * @brief Send data to the desired BLE characteristic in UTF-8
  * @note  a string finisher is sent at the end of the transmit
@@ -247,7 +291,6 @@ void sendStringData(char *buffer, BLECharacteristic *pTXCharacteristic) {
     pTXCharacteristic -> notify();
     delay(10); // bluetooth stack will go into congestion, if too many packets are sent, 10ms min
 }
-
 /**
  * @brief Send data char by char to the desired BLE characteristic in UTF-8
  * @note  a string finisher is sent at the end of the transmit
@@ -266,7 +309,10 @@ void sendData(char *buffer, BLECharacteristic *pTXCharacteristic) {
         delay(15); // bluetooth stack will go into congestion, if too many packets are sent, 10ms min
     }
 }
-
+/**
+ * @brief 
+ * 
+ */
 void mpuCalc(void) {
     sendStringData(MPUCal, pTxCharacteristic);
     Serial.println("MPU About to calibrate, no move");
@@ -278,7 +324,10 @@ void mpuCalc(void) {
     Serial.println("MPU Calibrated");
     sendStringData(MPUReady, pTxCharacteristic);
 }
-
+/**
+ * @brief 
+ * 
+ */
 void fatalError(void) {
     while(1) {
         Serial.println("Fatal Error: Could not connect to MPU6050");

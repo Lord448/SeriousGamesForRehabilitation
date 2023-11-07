@@ -12,6 +12,7 @@
 //Sends the data no matter if the game is requesting information
 //!More battery consume if defined
 #define TEST
+#de
 
 #define WORKING_AXYS_X
 //#define WORKING_AXYS_Y
@@ -115,17 +116,6 @@ class MyCallbacks : public BLECharacteristicCallbacks {
     }
 };
 
-#line 116 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
-void setup();
-#line 166 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
-void loop();
-#line 216 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
-void getData(float *read);
-#line 232 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
-void scaleData(float *value, float read);
-#line 270 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
-void mpuCalc(void);
-#line 116 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
 void setup()
 {
     Serial.begin(115200);
