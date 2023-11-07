@@ -1,5 +1,23 @@
 #include <Arduino.h>
 #line 1 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+/**
+ * @file      ShoulderWheel.ino
+ * 
+ * @author    Pedro Rojo (pedroeroca@outook.com)
+ * 
+ * @brief     Makes the connection and acquires the angle information with
+ *            a MPU6050 Sensor, for connections check the README.md, the ESP32
+ *            sends fixed strings to notifiy the mobile the current status of the
+ *            embedded device
+ * 
+ * @version   0.1.0
+ * @date      2023-11-06
+ * 
+ * @copyright This Source Code Form is subject to the terms of the Mozilla Public
+              License, v. 2.0. If a copy of the MPL was not distributed with this
+              file, You can obtain one at https://mozilla.org/MPL/2.0/
+ * 
+ */
 #include <stdio.h>
 #include <string.h>
 #include <BLEDevice.h>
@@ -12,7 +30,13 @@
 //Sends the data no matter if the game is requesting information
 //!More battery consume if defined
 #define TEST
-#de
+
+//Configure the battery power notification
+#define BATT
+//Battery volts when discharge
+#define BATTERY_LOW_VOLTAGE 2 //Value analog scaled with OpAmps
+//Battery volts when full charge
+#define BATTERY_FULL_VOLTAGE 3 //Value analog scaled with OpAmps
 
 #define WORKING_AXYS_X
 //#define WORKING_AXYS_Y
@@ -28,15 +52,19 @@
 
 // See the following for generating UUIDs:
 // https://www.uuidgenerator.net/
-
 #define SERVICE_UUID           "0a6131ee-7c3a-11ee-b962-0242ac120002" // UART service UUID
 #define CHARACTERISTIC_UUID_RX "0f16c6ae-7c3a-11ee-b962-0242ac120002"
 #define CHARACTERISTIC_UUID_TX "131552ca-7c3a-11ee-b962-0242ac120002"
 
+//----------------------------------------------------------------------
+//                            PROTOTYPES
+//----------------------------------------------------------------------
 void sendData(char *buffer, BLECharacteristic *pTXCharacteristic);
 void sendStringData(char *buffer, BLECharacteristic *pTXCharacteristic);
 void fatalError(void);
-
+//----------------------------------------------------------------------
+//                          GLOBAL VARIABLES
+//----------------------------------------------------------------------
 BLEServer *pServer = NULL;
 BLECharacteristic *pTxCharacteristic;
 MPU6050 mpu(Wire);
@@ -46,26 +74,35 @@ bool valueIsDiff = false;
 bool deviceConnected = false;
 bool oldDeviceConnected = false;
 static char Buffer[16];
-
-//Receive Strings
+//----------------------------------------------------------------------
+//                          RECEIVE STRINGS
+//----------------------------------------------------------------------
 static const char *doTransmit = "Transmit";
 static const char *stopTX = "Stop";
 static const char *sleepTX = "Sleep";
 static const char *wakeupTX = "Wake";
 static const char *Reset = "Reset";
 static const char *MPUStartCal = "MPUStartCal"; //Order to calibrate MPU
-//Send Strings
+//----------------------------------------------------------------------
+//                           SEND STRINGS
+//----------------------------------------------------------------------
 static char *MPUError = "MPUError";
 static char *ResetSend = "ResetESP32";
 static char *MPUCal = "MPUCal"; //No Move MPU
 static char *MPUReady = "MPUReady";
-
+static char *LowBatt = "LowBatt";
+static char *FullBatt = "FullBatt";
+//----------------------------------------------------------------------
+//                            BLE FLAGS
+//----------------------------------------------------------------------
 struct bleRXFlags {
     bool doTransmit;
     bool sleep;
     bool mpuCal;
 }bleRXFlags;
-
+//----------------------------------------------------------------------
+//                         SERVER CALLBACKS
+//----------------------------------------------------------------------
 class MyServerCallbacks : public BLEServerCallbacks {
     void onConnect(BLEServer *pServer) {
         deviceConnected = true;
@@ -76,6 +113,9 @@ class MyServerCallbacks : public BLEServerCallbacks {
     }
 };
 
+//----------------------------------------------------------------------
+//                     CHARACTERISTIC CALLBACKS
+//----------------------------------------------------------------------
 class MyCallbacks : public BLECharacteristicCallbacks {
     void onWrite(BLECharacteristic *pCharacteristic) {
         std::string rxValue = pCharacteristic -> getValue();
@@ -115,7 +155,20 @@ class MyCallbacks : public BLECharacteristicCallbacks {
         }
     }
 };
-
+//----------------------------------------------------------------------
+//                              SETUP
+//----------------------------------------------------------------------
+#line 159 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+void setup();
+#line 211 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+void loop();
+#line 267 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+void getData(float *read);
+#line 292 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+void scaleData(float *value, float read);
+#line 337 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+void mpuCalc(void);
+#line 159 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
 void setup()
 {
     Serial.begin(115200);
@@ -165,18 +218,19 @@ void setup()
         fatalError();   
     mpuCalc();
 }
-
+//----------------------------------------------------------------------
+//                                LOOP
+//----------------------------------------------------------------------
 void loop()
 {
+    //Data process
 	getData(&rawAngle);
-
     valueIsDiff = 
     (rawAngle > (pastAngle + HYSTERESYS) || rawAngle < (pastAngle - HYSTERESYS))
     && (rawAngle != pastAngle);
 
     if (valueIsDiff) {
         scaleData(&angle, rawAngle);
-
 #ifndef TEST
         if(deviceConnected && bleRXFlags.doTransmit)
 #else
@@ -208,37 +262,55 @@ void loop()
         mpuCalc();
         bleRXFlags.mpuCal = false;
     }
+    //Check battery voltage
     pastAngle = rawAngle;
 }
 
+
+//----------------------------------------------------------------------
+//                         DATA PROCESS FUNCTIONS
+//----------------------------------------------------------------------
 /**
- * @brief Getting the mean value of the lectures (6 Lectures)
- * 
+ * @brief Gets the mean value of the lectures (6 Lectures)
+ * @note  Since the mean arithmetics needs the absolut scale (0 - 360) 
+ *        instead of the relative scale (0 - -180) this functions returns 
+ *        the data ready to send
  * @param read: Value where is saved the mean
  */
 void getData(float *read) {
     float lectures = 0;
+    float tmp = 0;
     for(uint32_t i = 0; i < 6; i++) {
 #ifdef WORKING_AXYS_X
-        lectures += mpu.getAngleX();
+        tmp = mpu.getAngleX();
 #elif defined(WORKING_AXYS_Y)
-        *lectures += mpu.getAngleY();
+        tmp = mpu.getAngleY();
 #elif defined(WORKING_AXYS_Z)
-        *lectures += mpu.getAngleZ();
+        tmp = mpu.getAngleZ();
 #else
-        *lectures += mpu.getAngleX();
+        tmp = mpu.getAngleX();
 #endif
+        if(tmp < 0) //Adjust to get absolute scale
+            tmp += 360;
+        lectures += tmp;
     }
     *read = lectures/6;
 }
-
+/**
+ * @brief Scales and proccess the data so it can be send to the mobile
+ * @note  The data is already scaled on the GetData method
+ * @param value 
+ * @param read 
+ */
 void scaleData(float *value, float read) {
-    *value = read+360;
+    *value = read; //The data is already scaled because the mean requires the adjust
 #ifdef TEST
     Serial.printf("rawAngle: %3.2f, Angle: %3.2f\n", rawAngle, *value);
 #endif
 }
-
+//----------------------------------------------------------------------
+//                           BLE SEND FUNCTIONS
+//----------------------------------------------------------------------
 /**
  * @brief Send data to the desired BLE characteristic in UTF-8
  * @note  a string finisher is sent at the end of the transmit
@@ -250,7 +322,6 @@ void sendStringData(char *buffer, BLECharacteristic *pTXCharacteristic) {
     pTXCharacteristic -> notify();
     delay(10); // bluetooth stack will go into congestion, if too many packets are sent, 10ms min
 }
-
 /**
  * @brief Send data char by char to the desired BLE characteristic in UTF-8
  * @note  a string finisher is sent at the end of the transmit
@@ -269,7 +340,13 @@ void sendData(char *buffer, BLECharacteristic *pTXCharacteristic) {
         delay(15); // bluetooth stack will go into congestion, if too many packets are sent, 10ms min
     }
 }
-
+//----------------------------------------------------------------------
+//                          MPU6050 FUNCTIONS
+//----------------------------------------------------------------------
+/**
+ * @brief Calibrates the MPU6050
+ * @note  Do not move the sensor when calibration is going on
+ */
 void mpuCalc(void) {
     sendStringData(MPUCal, pTxCharacteristic);
     Serial.println("MPU About to calibrate, no move");
@@ -281,7 +358,11 @@ void mpuCalc(void) {
     Serial.println("MPU Calibrated");
     sendStringData(MPUReady, pTxCharacteristic);
 }
-
+/**
+ * @brief Called when the MPU6050 could not be initializated
+ *        it traps the ESP32 inside a loop and notifies each 2
+ *        seconds to the Serial port and the mobile app
+ */
 void fatalError(void) {
     while(1) {
         Serial.println("Fatal Error: Could not connect to MPU6050");
