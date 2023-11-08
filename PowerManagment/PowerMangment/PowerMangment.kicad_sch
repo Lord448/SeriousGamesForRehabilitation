@@ -1901,7 +1901,7 @@
     (property "Reference" "R2" (at 152.4 102.235 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
-    (property "Value" "1.2K" (at 152.4 104.775 0)
+    (property "Value" "12K" (at 152.4 104.775 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Footprint" "" (at 149.352 103.505 90)
@@ -2087,7 +2087,7 @@
     (property "Reference" "R3" (at 152.4 115.57 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
-    (property "Value" "2.2K" (at 152.4 118.11 0)
+    (property "Value" "22K" (at 152.4 118.11 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Footprint" "" (at 149.352 116.84 90)
@@ -2199,10 +2199,10 @@
     (property "Datasheet" "" (at 155.575 54.61 0)
       (effects (font (size 1.27 1.27)) hide)
     )
-    (pin "" (uuid 2eb2d33e-91e8-4039-833c-55a85d6c0e13))
-    (pin "" (uuid 2eb2d33e-91e8-4039-833c-55a85d6c0e13))
-    (pin "" (uuid 2eb2d33e-91e8-4039-833c-55a85d6c0e13))
-    (pin "" (uuid 2eb2d33e-91e8-4039-833c-55a85d6c0e13))
+    (pin "" (uuid 2eb2d33e-91e8-4039-833c-55a85d6c0e16))
+    (pin "" (uuid 2eb2d33e-91e8-4039-833c-55a85d6c0e16))
+    (pin "" (uuid 2eb2d33e-91e8-4039-833c-55a85d6c0e16))
+    (pin "" (uuid 2eb2d33e-91e8-4039-833c-55a85d6c0e16))
     (instances
       (project "PowerMangment"
         (path "/8926b792-6b40-43da-a1b8-53c8df359e75"
