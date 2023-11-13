@@ -30,7 +30,7 @@
 #define TEST
 
 //Configure the battery power notification
-#define BATT
+//#define BATT
 //Macro to get volts
 #define toVolts(x) (x*3.3f)/4095
 //Macro to get ADCCounts
@@ -57,7 +57,13 @@
 #define SERVICE_UUID           "0a6131ee-7c3a-11ee-b962-0242ac120002" // UART service UUID
 #define CHARACTERISTIC_UUID_RX "0f16c6ae-7c3a-11ee-b962-0242ac120002"
 #define CHARACTERISTIC_UUID_TX "131552ca-7c3a-11ee-b962-0242ac120002"
-
+//----------------------------------------------------------------------
+//                          ENUMS & STRUCTS
+//----------------------------------------------------------------------
+typedef enum BattFlags {
+    LowBatt_t,
+    FullBatt_t
+}BattFlags;
 //----------------------------------------------------------------------
 //                            PROTOTYPES
 //----------------------------------------------------------------------
@@ -96,13 +102,6 @@ static char *MPUCal = "MPUCal"; //No Move MPU
 static char *MPUReady = "MPUReady";
 static char *LowBatt = "LowBatt";
 static char *FullBatt = "FullBatt";
-//----------------------------------------------------------------------
-//                          ENUMS & STRUCTS
-//----------------------------------------------------------------------
-typedef enum BattFlags {
-    LowBatt_t,
-    FullBatt_t
-}BattFlags;
 //----------------------------------------------------------------------
 //                            BLE FLAGS
 //----------------------------------------------------------------------
@@ -261,6 +260,8 @@ void loop()
             digitalWrite(LED_PIN, 1);
         oldDeviceConnected = deviceConnected;
     }
+
+    //MPU Calibration
     if(bleRXFlags.mpuCal) {
         mpuCalc();
         bleRXFlags.mpuCal = false;
@@ -290,6 +291,7 @@ void getData(float *read) {
     float lectures = 0;
     float tmp = 0;
     for(uint32_t i = 0; i < 6; i++) {
+        mpu.update();
 #ifdef WORKING_AXYS_X
         tmp = mpu.getAngleX();
 #elif defined(WORKING_AXYS_Y)

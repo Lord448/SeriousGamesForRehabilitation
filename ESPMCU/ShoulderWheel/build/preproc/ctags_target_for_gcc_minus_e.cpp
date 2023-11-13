@@ -11,9 +11,9 @@
 
  * @brief     Makes the connection and acquires the angle information with
 
- *            a MPU6050 Sensor, for connections check the README.md, the ESP32
+ *            a MPU6050 Sensor, for physical connections check the README.md, the ESP32
 
- *            sends fixed strings to notifiy the mobile the current status of the
+ *            sends fixed strings to notify to the mobile the current status of the
 
  *            embedded device
 
@@ -45,10 +45,14 @@
 # 27 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino" 2
 
 //Sends the data no matter if the game is requesting information
-//!More battery consume if defined
+//!More battery power will be consumed if defined
 
 
 //Configure the battery power notification
+//#define BATT
+//Macro to get volts
+
+//Macro to get ADCCounts
 
 //Battery volts when discharge
 
@@ -72,26 +76,34 @@
 
 
 
-
+//----------------------------------------------------------------------
+//                          ENUMS & STRUCTS
+//----------------------------------------------------------------------
+typedef enum BattFlags {
+    LowBatt_t,
+    FullBatt_t
+}BattFlags;
 //----------------------------------------------------------------------
 //                            PROTOTYPES
 //----------------------------------------------------------------------
+void getData(float *read);
+void scaleData(float *value, float read);
 void sendData(char *buffer, BLECharacteristic *pTXCharacteristic);
 void sendStringData(char *buffer, BLECharacteristic *pTXCharacteristic);
+void mpuCalc(void);
 void fatalError(void);
+void battHandler(BattFlags BattFlags);
 //----------------------------------------------------------------------
 //                          GLOBAL VARIABLES
 //----------------------------------------------------------------------
 BLEServer *pServer = 
-# 66 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino" 3 4
+# 80 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino" 3 4
                     __null
-# 66 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+# 80 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
                         ;
 BLECharacteristic *pTxCharacteristic;
 MPU6050 mpu(Wire);
-float rawAngle, pastAngle = 0;
-float angle;
-bool valueIsDiff = false;
+float rawAngle;
 bool deviceConnected = false;
 bool oldDeviceConnected = false;
 static char Buffer[16];
@@ -222,9 +234,7 @@ void setup()
     pServer->getAdvertising()->start();
     Serial.println("Waiting a client connection to notify...");
 
-    byte status = mpu.begin();
-
-    if(status != 0)
+    if(mpu.begin() != 0)
         fatalError();
     mpuCalc();
 }
@@ -233,6 +243,11 @@ void setup()
 //----------------------------------------------------------------------
 void loop()
 {
+    float pastAngle = 0;
+    float angle;
+    uint32_t BattVoltage;
+    bool valueIsDiff = false;
+
     //Data process
  getData(&rawAngle);
     valueIsDiff =
@@ -252,7 +267,7 @@ void loop()
         }
     }
 
-    // disconnecting
+    // BLE device disconnect
     if (!deviceConnected && oldDeviceConnected) {
         if(digitalRead(2) == 1)
             digitalWrite(2, 0);
@@ -262,21 +277,29 @@ void loop()
         oldDeviceConnected = deviceConnected;
     }
 
-    // connecting
+    // BLE device connect
     if (deviceConnected && !oldDeviceConnected) {
   if(digitalRead(2) == 0)
             digitalWrite(2, 1);
         oldDeviceConnected = deviceConnected;
     }
+
+    //MPU Calibration
     if(bleRXFlags.mpuCal) {
         mpuCalc();
         bleRXFlags.mpuCal = false;
     }
+
     //Check battery voltage
+
+
+
+
+
+
+
     pastAngle = rawAngle;
 }
-
-
 //----------------------------------------------------------------------
 //                         DATA PROCESS FUNCTIONS
 //----------------------------------------------------------------------
@@ -293,11 +316,12 @@ void loop()
  * @param read: Value where is saved the mean
 
  */
-# 267 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+# 290 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
 void getData(float *read) {
     float lectures = 0;
     float tmp = 0;
     for(uint32_t i = 0; i < 6; i++) {
+        mpu.update();
 
         tmp = mpu.getAngleX();
 
@@ -312,19 +336,34 @@ void getData(float *read) {
         lectures += tmp;
     }
     *read = lectures/6;
+   /*
+
+   delay(10);
+
+   mpu.update();
+
+    float tmp = 0; 
+
+    tmp = mpu.getAngleX();
+
+    Serial.println(tmp);
+
+    */
+# 316 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
 }
+
 /**
 
  * @brief Scales and proccess the data so it can be send to the mobile
 
  * @note  The data is already scaled on the GetData method
 
- * @param value 
+ * @param value: pointer to the value that will be sent
 
- * @param read 
+ * @param read: raw read of the value
 
  */
-# 292 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+# 324 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
 void scaleData(float *value, float read) {
     *value = read; //The data is already scaled because the mean requires the adjust
 
@@ -345,12 +384,13 @@ void scaleData(float *value, float read) {
  * @param pTXCharacteristic Characteristic that will be modified
 
  */
-# 307 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+# 339 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
 void sendStringData(char *buffer, BLECharacteristic *pTXCharacteristic) {
     pTXCharacteristic -> setValue((uint8_t *)buffer, strlen(buffer));
     pTXCharacteristic -> notify();
     delay(10); // bluetooth stack will go into congestion, if too many packets are sent, 10ms min
 }
+
 /**
 
  * @brief Send data char by char to the desired BLE characteristic in UTF-8
@@ -362,7 +402,7 @@ void sendStringData(char *buffer, BLECharacteristic *pTXCharacteristic) {
  * @param pTXCharacteristic Characteristic that will be modified
 
  */
-# 318 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+# 351 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
 void sendData(char *buffer, BLECharacteristic *pTXCharacteristic) {
     char charTX;
     for(uint32_t i = 0; i <= strlen(buffer); i++) {
@@ -385,7 +425,7 @@ void sendData(char *buffer, BLECharacteristic *pTXCharacteristic) {
  * @note  Do not move the sensor when calibration is going on
 
  */
-# 337 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+# 370 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
 void mpuCalc(void) {
     sendStringData(MPUCal, pTxCharacteristic);
     Serial.println("MPU About to calibrate, no move");
@@ -397,6 +437,7 @@ void mpuCalc(void) {
     Serial.println("MPU Calibrated");
     sendStringData(MPUReady, pTxCharacteristic);
 }
+
 /**
 
  * @brief Called when the MPU6050 could not be initializated
@@ -406,7 +447,7 @@ void mpuCalc(void) {
  *        seconds to the Serial port and the mobile app
 
  */
-# 353 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+# 387 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
 void fatalError(void) {
     while(1) {
         Serial.println("Fatal Error: Could not connect to MPU6050");
@@ -414,5 +455,36 @@ void fatalError(void) {
             sendStringData(MPUError, pTxCharacteristic);
         }
         delay(2000);
+    }
+}
+//----------------------------------------------------------------------
+//                         BATTERY FUNCTIONS
+//----------------------------------------------------------------------
+/**
+
+ * @brief Handle and notifies to the BLE device the status of the battery
+
+ * 
+
+ * @param BattFlags 
+
+ */
+# 404 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+void battHandler(BattFlags BattFlags) {
+    const uint32_t period = 2500; //2.5segs
+    static uint32_t time = millis();
+
+    if(millis() > time + period) {
+        switch(BattFlags) {
+            case LowBatt_t:
+                Serial.println("Low battery");
+                sendStringData(LowBatt, pTxCharacteristic);
+            break;
+            case FullBatt_t:
+                Serial.println("Full battery");
+                sendStringData(FullBatt, pTxCharacteristic);
+            break;
+        }
+        time = millis();
     }
 }

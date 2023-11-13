@@ -28,21 +28,21 @@ bool deviceConnected = false;
 bool oldDeviceConnected = false;
 char Buffer[4];
 const uint32_t touchGPIO[15] = {
-    4,
-    13,
-    14,
-    16,
-    17,
-    18,
-    19,
-    21,
-    22,
-    23,
-    25,
-    26,
-    27,
-    32,
-    33
+    4,  //Step 1 
+    13, //Step 2
+    14, //Step 3
+    16, //Step 4
+    17, //Step 5
+    18, //Step 6
+    19, //Step 7
+    21, //Step 8
+    22, //Step 9
+    23, //Step 10
+    25, //Step 11
+    26, //Step 12
+    27, //Step 13
+    32, //Step 14
+    33  //Step 15
 };
 
 static const char *doTransmit = "Transmit";
