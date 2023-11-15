@@ -8,12 +8,14 @@
  *            sends fixed strings to notify to the mobile the current status of the
  *            embedded device
  * 
- * @version   0.1.0
+ * @version   0.1.1
  * @date      2023-11-06
  * 
  * @copyright This Source Code Form is subject to the terms of the Mozilla Public
               License, v. 2.0. If a copy of the MPL was not distributed with this
               file, You can obtain one at https://mozilla.org/MPL/2.0/
+
+ * @todo      Implement enhanced communication with the BLE device
  * 
  */
 #include <stdio.h>
@@ -40,23 +42,39 @@
 //Battery volts when full charge
 #define BATTERY_FULL_VOLTAGE toADCCount(3) //Value analog scaled with OpAmps
 
+//The axys that will use the MPU6050 to get the angle
+//For more detail refer to the MPU6050 datasheet or MPU6050_Light library
 #define WORKING_AXYS_X
 //#define WORKING_AXYS_Y
 //#define WORKING_AXYS_Z
 
+//Define it if the sensor will be in this position
 //#define UPSIDEDOWN_MOUNT
 
+//Name that will appear on the mobile device
+//!Needs to be the same as declared in the game
 #define SERVER_NAME "ShoulderWheel"
-#define LED_PIN 2
-#define ANALOG_PIN 4
 
+//Led pin on the ESP32 board used
+//it indicates if a BLE device is connected
+//USE 0xFF or comment to disable it
+#define LED_PIN 0xFF
+
+//Macro to know if the led pin of the ESP32 is used
+#define LED_ENABLED (LED_PIN != 0xFF && defined(LED_PIN))
+
+//Value for the window on the sending data, avoids noise
 #define HYSTERESYS 10
 
 // See the following for generating UUIDs:
 // https://www.uuidgenerator.net/
-#define SERVICE_UUID           "0a6131ee-7c3a-11ee-b962-0242ac120002" // UART service UUID
+
+// "UART" Service UUID
+#define SERVICE_UUID           "0a6131ee-7c3a-11ee-b962-0242ac120002"
+// BLE RX Characteristic -- Here you receive the incoming data
 #define CHARACTERISTIC_UUID_RX "0f16c6ae-7c3a-11ee-b962-0242ac120002"
-#define CHARACTERISTIC_UUID_TX "131552ca-7c3a-11ee-b962-0242ac120002"
+// BLE TX Characteristic -- Here you notify the GATT Client
+#define CHARACTERISTIC_UUID_TX "131552ca-7c3a-11ee-b962-0242ac120002" 
 //----------------------------------------------------------------------
 //                          ENUMS & STRUCTS
 //----------------------------------------------------------------------
@@ -77,38 +95,39 @@ void battHandler(BattFlags BattFlags);
 //----------------------------------------------------------------------
 //                          GLOBAL VARIABLES
 //----------------------------------------------------------------------
-BLEServer *pServer = NULL;
-BLECharacteristic *pTxCharacteristic;
-MPU6050 mpu(Wire);
-float rawAngle;
-bool deviceConnected = false;
-bool oldDeviceConnected = false;
-static char Buffer[16];
+BLEServer *pServer = NULL; //Pointer to the BLE server class
+BLECharacteristic *pTxCharacteristic; //Pointer to the TX characteristic
+MPU6050 mpu(Wire); //Object that handles the MPU6050 sensor
+float rawAngle; //Angle obtained from the MPU6050
+bool deviceConnected = false;  //Indicates the status of the connection
+bool oldDeviceConnected = false;  //Used report the disconection or connection once
+static char Buffer[16]; //Data buffer that will be send to the GATT Client
 //----------------------------------------------------------------------
 //                          RECEIVE STRINGS
 //----------------------------------------------------------------------
-static const char *doTransmit = "Transmit";
-static const char *stopTX = "Stop";
-static const char *sleepTX = "Sleep";
-static const char *wakeupTX = "Wake";
-static const char *Reset = "Reset";
-static const char *MPUStartCal = "MPUStartCal"; //Order to calibrate MPU
+//!Low power mode feature is not going to be implemented (The residual code will be removed on future releases)
+static const char *doTransmit = "Transmit"; //Indicates that the ESP32 is allowed to send information to the GATT Client
+static const char *stopTX = "Stop"; //Indicates that the ESP32 is not allowed to send data to the GATT Client
+static const char *sleepTX = "Sleep"; //Indicates that the ESP32 needs to go to sleep
+static const char *wakeupTX = "Wake"; //Indicates that needs to wake up
+static const char *Reset = "Reset"; //Reset the MCU
+static const char *MPUStartCal = "MPUStartCal"; //Start calibration on MPU6050
 //----------------------------------------------------------------------
 //                           SEND STRINGS
 //----------------------------------------------------------------------
-static char *MPUError = "MPUError";
-static char *ResetSend = "ResetESP32";
+static char *MPUError = "MPUError"; //An error has been ocurred between the ESP32 and the MPU6050
+static char *ResetSend = "ResetESP32"; //The ESP32 will reset
 static char *MPUCal = "MPUCal"; //No Move MPU
-static char *MPUReady = "MPUReady";
-static char *LowBatt = "LowBatt";
-static char *FullBatt = "FullBatt";
+static char *MPUReady = "MPUReady"; //The sensor is ready to use
+static char *LowBatt = "LowBatt"; //The battery of the system is low
+static char *FullBatt = "FullBatt"; //The battery of the system is full
 //----------------------------------------------------------------------
 //                            BLE FLAGS
 //----------------------------------------------------------------------
 struct bleRXFlags {
-    bool doTransmit;
-    bool sleep;
-    bool mpuCal;
+    bool doTransmit; //Indicates that the ESP32 is allowed to send information to the GATT Client
+    bool sleep; //Indicates that the ESP32 needs to go to sleep
+    bool mpuCal; //Start calibration on MPU6050
 }bleRXFlags;
 //----------------------------------------------------------------------
 //                         SERVER CALLBACKS
@@ -122,11 +141,17 @@ class MyServerCallbacks : public BLEServerCallbacks {
         deviceConnected = false;
     }
 };
-
 //----------------------------------------------------------------------
 //                     CHARACTERISTIC CALLBACKS
 //----------------------------------------------------------------------
+//!Only valid for writeable characteristics
 class MyCallbacks : public BLECharacteristicCallbacks {
+    /**
+     * @brief Receive the data that has been writed on the BLE 
+     *        characteristic
+     * 
+     * @param pCharacteristic Writed characteristic
+     */
     void onWrite(BLECharacteristic *pCharacteristic) {
         std::string rxValue = pCharacteristic -> getValue();
         if(rxValue.length() > 0) {
@@ -178,6 +203,10 @@ void setup()
     for(uint32_t i = 0; i < sizeof(bleRXFlags); i++, pFlags++)
         *pFlags = false;
 #endif
+    //Config pin
+#if LED_ENABLED
+    pinMode(LED_PIN, OUTPUT);
+#endif  
 
     // Create the BLE Device
     BLEDevice::init(SERVER_NAME);
@@ -226,38 +255,44 @@ void loop()
     bool valueIsDiff = false;
     
     //Data process
-	getData(&rawAngle);
+	getData(&rawAngle); //Getting data from the sensor and store it in rawAngle
+
+    //Checking if is worth to send the data
     valueIsDiff = 
     (rawAngle > (pastAngle + HYSTERESYS) || rawAngle < (pastAngle - HYSTERESYS))
     && (rawAngle != pastAngle);
 
     if (valueIsDiff) {
-        scaleData(&angle, rawAngle);
+        scaleData(&angle, rawAngle); //At the moment this function does nothing
 #ifndef TEST
         if(deviceConnected && bleRXFlags.doTransmit)
 #else
         if(deviceConnected)
 #endif
         {
-            sprintf(Buffer, "Angle:%3.2f\n", angle);
-            sendStringData(Buffer, pTxCharacteristic);
+            sprintf(Buffer, "Angle:%3.2f\n", angle); //Building the string
+            sendStringData(Buffer, pTxCharacteristic); //Sending to the GATT Client
         }
     }
     
     // BLE device disconnect
     if (!deviceConnected && oldDeviceConnected) {
+#if LED_ENABLED
         if(digitalRead(LED_PIN) == 1)
             digitalWrite(LED_PIN, 0);
+#endif
         delay(500); // give the bluetooth stack the chance to get things ready
         pServer->startAdvertising(); // restart advertising
-        Serial.println("start advertising");
+        Serial.println("Start advertising");
         oldDeviceConnected = deviceConnected;
     }
 
     // BLE device connect
     if (deviceConnected && !oldDeviceConnected) {
+#if LED_ENABLED
 		if(digitalRead(LED_PIN) == 0)
             digitalWrite(LED_PIN, 1);
+#endif
         oldDeviceConnected = deviceConnected;
     }
 

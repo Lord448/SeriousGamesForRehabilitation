@@ -1,3 +1,22 @@
+/**
+ * @file      Ladder.ino
+ * 
+ * @author    Pedro Rojo (pedroeroca@outlook.com) 
+ * 
+ * @brief     It uses TTP223 capacitive touch sensors to get the position of
+ *            the finger in the ladder, then it sends via BLE to the 
+ *            Hungry Hamster game
+ *            for more info about the connections check the local README.md file
+ * 
+ * @version   0.1.0
+ * @date      2023-11-14
+ * 
+ * @copyright This Source Code Form is subject to the terms of the Mozilla Public
+              License, v. 2.0. If a copy of the MPL was not distributed with this
+              file, You can obtain one at https://mozilla.org/MPL/2.0/
+
+ * @todo      Implement enhanced communication with the BLE device
+ */
 #include <stdio.h>
 #include <string.h>
 #include <BLEDevice.h>
@@ -5,67 +24,109 @@
 #include <BLEUtils.h>
 #include <BLE2902.h>
 
+//Disables the control for the BLE game and sends the strings no matter the instructions
 #define TEST
 
-#define SERVER_NAME "Ladder"
-#define LED_PIN 2
+//Name that will appear on the mobile device
+//!Needs to be the same as declared in the game
+#define SERVER_NAME "Ladder" 
 
+//Led pin on the ESP32 board used
+//It indicates if a BLE device is connected
+//USE 0xFF or comment to disable it
+#define LED_PIN 0xFF
+
+//Macro to know if the led pin of the ESP32 is used
+#define LED_ENABLED (LED_PIN != 0xFF && defined(LED_PIN))
+
+//Macro to get the lenght of the touchGPIO array
 #define LIMIT i < (sizeof(touchGPIO)/4)
 
-// See the following for generating UUIDs:
+// See the following url for generating UUIDs:
 // https://www.uuidgenerator.net/
 
-#define SERVICE_UUID           "670b1f26-0a44-11ee-be56-0242ac120002" // UART service UUID
-#define CHARACTERISTIC_UUID_RX "006e861c-0a45-11ee-be56-0242ac120002"
-#define CHARACTERISTIC_UUID_TX "058804de-0a45-11ee-be56-0242ac120002"
-
+// "UART" Service UUID
+#define SERVICE_UUID           "670b1f26-0a44-11ee-be56-0242ac120002" 
+// BLE RX Characteristic -- Here you receive the incoming data
+#define CHARACTERISTIC_UUID_RX "006e861c-0a45-11ee-be56-0242ac120002" 
+// BLE TX Characteristic -- Here you notify the GATT Client
+#define CHARACTERISTIC_UUID_TX "058804de-0a45-11ee-be56-0242ac120002" 
+//----------------------------------------------------------------------
+//                            PROTOTYPES
+//----------------------------------------------------------------------
 void sendData(char *buffer, BLECharacteristic *pTXCharacteristic);
 void sendStringData(char *buffer, BLECharacteristic *pTXCharacteristic);
-
-BLEServer *pServer = NULL;
-BLECharacteristic *pTxCharacteristic;
-bool deviceConnected = false;
-bool oldDeviceConnected = false;
-char Buffer[4];
-const uint32_t touchGPIO[15] = {
-    4,  //Step 1 
-    13, //Step 2
-    14, //Step 3
-    16, //Step 4
-    17, //Step 5
-    18, //Step 6
-    19, //Step 7
-    21, //Step 8
-    22, //Step 9
-    23, //Step 10
-    25, //Step 11
-    26, //Step 12
-    27, //Step 13
-    32, //Step 14
-    33  //Step 15
+//----------------------------------------------------------------------
+//                          GLOBAL VARIABLES
+//----------------------------------------------------------------------
+BLEServer *pServer = NULL; //Pointer to the BLE server class
+BLECharacteristic *pTxCharacteristic; //Pointer to the TX characteristic
+bool deviceConnected = false; //Indicates the status of the connection
+bool oldDeviceConnected = false; //Used report the disconection or connection once
+bool hasBeenSent = false; //Used to send only on string per presion to the BLE
+uint32_t lastPin = 0xFF; //Last pin used to 
+char Buffer[4]; //Data buffer that will be send to the GATT Client (is constructed in the Loop code)
+const uint32_t touchGPIO[] = { //GPIO Pins used in the ESP32
+    23,  //Step 1 
+    22,  //Step 2
+    21,  //Step 3
+    19,  //Step 4
+    18,  //Step 5
+    17,  //Step 6
+    16,  //Step 7
+    4,  //Step 8 
+    /* Other side of the ESP32 */
+    34, //Step 9   
+    32, //Step 10
+    33, //Step 11
+    25, //Step 12
+    26, //Step 13
+    27, //Step 14
+    14, //Step 15
+    13  //Step 16
 };
-
-static const char *doTransmit = "Transmit";
-static const char *stopTX = "Stop";
-static const char *sleepTX = "Sleep";
-static const char *wakeupTX = "Wake";
-
+//----------------------------------------------------------------------
+//                          RECEIVE STRINGS
+//----------------------------------------------------------------------
+//!Low power mode feature is not going to be implemented (The residual code will be removed on future releases)
+static const char *doTransmit = "Transmit"; //Indicates that the ESP32 is allowed to send information to the GATT Client
+static const char *stopTX = "Stop"; //Indicates that the ESP32 is not allowed to send data to the GATT Client
+static const char *sleepTX = "Sleep"; //Indicates that the ESP32 needs to go to sleep
+static const char *wakeupTX = "Wake"; //Indicates that needs to wake up
+//----------------------------------------------------------------------
+//                           SEND STRINGS
+//----------------------------------------------------------------------
+//todo
+//----------------------------------------------------------------------
+//                            BLE FLAGS
+//----------------------------------------------------------------------
 struct bleRXFlags {
-    bool doTransmit;
-    bool sleep;
+    bool doTransmit; //Indicates that the ESP32 is allowed to send information to the GATT Client
+    bool sleep; //Indicates that the ESP32 needs to go to sleep
 }bleRXFlags;
-
+//----------------------------------------------------------------------
+//                         SERVER CALLBACKS
+//----------------------------------------------------------------------
 class MyServerCallbacks : public BLEServerCallbacks {
     void onConnect(BLEServer *pServer) {
         deviceConnected = true;
     };
-
+    
     void onDisconnect(BLEServer *pServer) {
         deviceConnected = false;
     }
 };
-
+//----------------------------------------------------------------------
+//                     CHARACTERISTIC CALLBACKS
+//----------------------------------------------------------------------
+//!Only valid for writeable characteristics
 class MyCallbacks : public BLECharacteristicCallbacks {
+    /**
+     * @brief Receive the data that has been writed on the BLE 
+     *        characteristic
+     * 
+     * @param pCharacteristic Writed characteristic
+     */
     void onWrite(BLECharacteristic *pCharacteristic) {
         std::string rxValue = pCharacteristic -> getValue();
         if(rxValue.length() > 0) {
@@ -95,10 +156,12 @@ class MyCallbacks : public BLECharacteristicCallbacks {
         }
     }
 };
-
-
+//----------------------------------------------------------------------
+//                              SETUP
+//----------------------------------------------------------------------
 void setup()
 {
+    //Init the UART communication
     Serial.begin(115200);
 
 #ifndef TEST
@@ -111,6 +174,10 @@ void setup()
     //Config Pins
     for(uint32_t i = 0; LIMIT; i++)
         pinMode(touchGPIO[i], INPUT);
+
+#if LED_ENABLED
+    pinMode(LED_PIN, OUTPUT);
+#endif
 
     // Create the BLE Device
     BLEDevice::init(SERVER_NAME);
@@ -144,43 +211,53 @@ void setup()
     pServer->getAdvertising()->start();
     Serial.println("Waiting a client connection to notify...");
 }
-
+//----------------------------------------------------------------------
+//                                LOOP
+//----------------------------------------------------------------------
 void loop()
 {
     //GPIO Read
 	for(uint32_t i = 0; LIMIT; i++) {
-        if(digitalRead(touchGPIO[i]) == 1) {
-            sprintf(Buffer, "T:%d", i);
+        hasBeenSent = lastPin == i;
+        if(digitalRead(touchGPIO[i]) == 1 && !hasBeenSent) { //The pin is touched and its a diferent pin
+            sprintf(Buffer, "T:%d\n", i); //Bulding the string
 #ifndef TEST
-        if(deviceConnected && bleRXFlags.doTransmit)
+            if(deviceConnected && bleRXFlags.doTransmit)
 #else
-        if(deviceConnected)
+            if(deviceConnected)
 #endif
             {
-                sendStringData(Buffer, pTxCharacteristic);
+                sendStringData(Buffer, pTxCharacteristic); //Sending to the GATT Client
             }
             Serial.println(Buffer);
+            lastPin = i;
         }
     }
     
     // disconnecting
     if (!deviceConnected && oldDeviceConnected) {
+#if LED_ENABLED
         if(digitalRead(LED_PIN) == 1)
             digitalWrite(LED_PIN, 0);
+#endif 
         delay(500); // give the bluetooth stack the chance to get things ready
         pServer->startAdvertising(); // restart advertising
-        Serial.println("start advertising");
+        Serial.println("Start advertising");
         oldDeviceConnected = deviceConnected;
     }
 
     // connecting
     if (deviceConnected && !oldDeviceConnected) {
 		// do stuff here on connecting
+#if LED_ENABLED
         digitalWrite(LED_PIN, 1);
+#endif
         oldDeviceConnected = deviceConnected;
     }
 }
-
+//----------------------------------------------------------------------
+//                           BLE SEND FUNCTIONS
+//----------------------------------------------------------------------
 /**
  * @brief Send data to the desired BLE characteristic in UTF-8
  * @note  a string finisher is sent at the end of the transmit
@@ -192,7 +269,6 @@ void sendStringData(char *buffer, BLECharacteristic *pTXCharacteristic) {
     pTXCharacteristic -> notify();
     delay(10); // bluetooth stack will go into congestion, if too many packets are sent, 10ms min
 }
-
 /**
  * @brief Send data char by char to the desired BLE characteristic in UTF-8
  * @note  a string finisher is sent at the end of the transmit

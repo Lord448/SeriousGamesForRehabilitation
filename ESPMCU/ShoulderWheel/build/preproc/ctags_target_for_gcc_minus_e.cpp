@@ -336,20 +336,6 @@ void getData(float *read) {
         lectures += tmp;
     }
     *read = lectures/6;
-   /*
-
-   delay(10);
-
-   mpu.update();
-
-    float tmp = 0; 
-
-    tmp = mpu.getAngleX();
-
-    Serial.println(tmp);
-
-    */
-# 316 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
 }
 
 /**
@@ -363,7 +349,7 @@ void getData(float *read) {
  * @param read: raw read of the value
 
  */
-# 324 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+# 317 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
 void scaleData(float *value, float read) {
     *value = read; //The data is already scaled because the mean requires the adjust
 
@@ -384,7 +370,7 @@ void scaleData(float *value, float read) {
  * @param pTXCharacteristic Characteristic that will be modified
 
  */
-# 339 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+# 332 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
 void sendStringData(char *buffer, BLECharacteristic *pTXCharacteristic) {
     pTXCharacteristic -> setValue((uint8_t *)buffer, strlen(buffer));
     pTXCharacteristic -> notify();
@@ -402,7 +388,7 @@ void sendStringData(char *buffer, BLECharacteristic *pTXCharacteristic) {
  * @param pTXCharacteristic Characteristic that will be modified
 
  */
-# 351 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+# 344 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
 void sendData(char *buffer, BLECharacteristic *pTXCharacteristic) {
     char charTX;
     for(uint32_t i = 0; i <= strlen(buffer); i++) {
@@ -425,7 +411,7 @@ void sendData(char *buffer, BLECharacteristic *pTXCharacteristic) {
  * @note  Do not move the sensor when calibration is going on
 
  */
-# 370 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+# 363 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
 void mpuCalc(void) {
     sendStringData(MPUCal, pTxCharacteristic);
     Serial.println("MPU About to calibrate, no move");
@@ -447,7 +433,7 @@ void mpuCalc(void) {
  *        seconds to the Serial port and the mobile app
 
  */
-# 387 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+# 380 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
 void fatalError(void) {
     while(1) {
         Serial.println("Fatal Error: Could not connect to MPU6050");
@@ -469,7 +455,7 @@ void fatalError(void) {
  * @param BattFlags 
 
  */
-# 404 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+# 397 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
 void battHandler(BattFlags BattFlags) {
     const uint32_t period = 2500; //2.5segs
     static uint32_t time = millis();

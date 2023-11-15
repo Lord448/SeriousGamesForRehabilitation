@@ -313,13 +313,6 @@ void getData(float *read) {
         lectures += tmp;
     }
     *read = lectures/6;
-   /*
-   delay(10);
-   mpu.update();
-    float tmp = 0; 
-    tmp = mpu.getAngleX();
-    Serial.println(tmp);
-    */
 }
 
 /**
