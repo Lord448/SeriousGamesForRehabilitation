@@ -63,8 +63,10 @@ BLEServer *pServer = NULL; //Pointer to the BLE server class
 BLECharacteristic *pTxCharacteristic; //Pointer to the TX characteristic
 bool deviceConnected = false; //Indicates the status of the connection
 bool oldDeviceConnected = false; //Used report the disconection or connection once
-bool hasBeenSent = false; //Used to send only on string per presion to the BLE
-uint32_t lastPin = 0xFF; //Last pin used to 
+bool needToSend = false; //Used to know if we need to send data 
+bool morePinsTouched = false; //Used to avoid the option to touch two steps at the same time
+uint32_t touchedPin = 0xFF; //Pin that will be notified to the game
+uint32_t lastPin = 0xFF; //Last pin used to send only one string per touch
 char Buffer[4]; //Data buffer that will be send to the GATT Client (is constructed in the Loop code)
 const uint32_t touchGPIO[] = { //GPIO Pins used in the ESP32
     23,  //Step 1 
@@ -216,11 +218,25 @@ void setup()
 //----------------------------------------------------------------------
 void loop()
 {
+    needToSend = false;
+    morePinsTouched = false;
     //GPIO Read
 	for(uint32_t i = 0; LIMIT; i++) {
-        hasBeenSent = lastPin == i;
-        if(digitalRead(touchGPIO[i]) == 1 && !hasBeenSent) { //The pin is touched and its a diferent pin
-            sprintf(Buffer, "T:%d\n", i); //Bulding the string
+        if(digitalRead(touchGPIO[i]) == 1) {
+            if(morePinsTouched || lastPin == i) {
+                touchedPin = 0xFF;
+                needToSend = false;
+                break;
+            }
+            touchedPin = i;
+            needToSend = true;
+            morePinsTouched = true;
+        }
+    }
+
+    //Sending information
+    if(needToSend && touchedPin != 0xFF) { //The pin is touched and its a diferent pin
+            sprintf(Buffer, "T:%d\n", touchedPin); //Bulding the string
 #ifndef TEST
             if(deviceConnected && bleRXFlags.doTransmit)
 #else
@@ -230,9 +246,9 @@ void loop()
                 sendStringData(Buffer, pTxCharacteristic); //Sending to the GATT Client
             }
             Serial.println(Buffer);
-            lastPin = i;
-        }
+            lastPin = touchedPin;
     }
+    
     
     // disconnecting
     if (!deviceConnected && oldDeviceConnected) {
