@@ -63,8 +63,14 @@
 //Macro to know if the led pin of the ESP32 is used
 #define LED_ENABLED (LED_PIN != 0xFF && defined(LED_PIN))
 
+//Macro to get the Absolut value
+#define ABS(x) x>0? x:-x
+
 //Value for the window on the sending data, avoids noise
 #define HYSTERESYS 10
+
+//Maximum value of the angle units increments
+#define MAX_INCREMENT 50.0
 
 // See the following for generating UUIDs:
 // https://www.uuidgenerator.net/
@@ -242,6 +248,7 @@ void setup()
 
     if(mpu.begin() != 0)
         fatalError();   
+    
     mpuCalc();
 }
 //----------------------------------------------------------------------
@@ -270,7 +277,7 @@ void loop()
         if(deviceConnected)
 #endif
         {
-            sprintf(Buffer, "Angle:%3.2f\n", angle); //Building the string
+            sprintf(Buffer, "%3.2f\n", angle); //Building the string
             sendStringData(Buffer, pTxCharacteristic); //Sending to the GATT Client
         }
     }
@@ -323,9 +330,10 @@ void loop()
  * @param read: Value where is saved the mean
  */
 void getData(float *read) {
+    const uint32_t numberOfValues = 8;
     float lectures = 0;
     float tmp = 0;
-    for(uint32_t i = 0; i < 6; i++) {
+    for(uint32_t i = 0; i < numberOfValues; i++) {
         mpu.update();
 #ifdef WORKING_AXYS_X
         tmp = mpu.getAngleX();
@@ -340,20 +348,44 @@ void getData(float *read) {
             tmp += 360;
         lectures += tmp;
     }
-    *read = lectures/6;
+    *read = lectures/numberOfValues;
 }
 
 /**
  * @brief Scales and proccess the data so it can be send to the mobile
- * @note  The data is already scaled on the GetData method
+ * @note  The data is already scaled on the GetData method modify if needed
  * @param value: pointer to the value that will be sent
  * @param read: raw read of the value
  */
 void scaleData(float *value, float read) {
     *value = read; //The data is already scaled because the mean requires the adjust
-#ifdef TEST
-    Serial.printf("rawAngle: %3.2f, Angle: %3.2f\n", rawAngle, *value);
-#endif
+}
+
+/**
+ * @brief Split a floating point variable in two integer variables
+ * 
+ * @note  IEEE standard has 8 bit for exponential part which means you cannot
+ *        have more than 7 decimals of presicion
+ * 
+ * @param value: Float value that will be splited
+ * @param intPart: Integer part of the number
+ * @param fraccPart: Fraccional part of the number 
+ * @param decimals: Number of decimals presicion (for IEEE Standard 7 max)
+ */
+void splitFloat(float value, int *intPart, int *fraccPart, uint32_t decimals) {
+    uint32_t decMultiplier = 1;
+
+    //Decimals limit check
+    if(decimals > 7) 
+        decimals = 7;
+    //Getting the multiplier
+    while(decimals > 0) {
+        decMultiplier *= 10;
+        decimals--;
+    }
+    //Calculate the values
+    *intPart = (int) value;
+    *fraccPart = ((value - *intPart) * decMultiplier);
 }
 //----------------------------------------------------------------------
 //                           BLE SEND FUNCTIONS
@@ -409,16 +441,25 @@ void mpuCalc(void) {
 
 /**
  * @brief Called when the MPU6050 could not be initializated
- *        it traps the ESP32 inside a loop and notifies each 2
- *        seconds to the Serial port and the mobile app
+ *        it traps the ESP32 inside a loop until the MPU is connected 
+ *        and notifies each second to the Serial port and the mobile app
+ *        if a maximum value is reached the ESP32 goes to reset
  */
 void fatalError(void) {
-    while(1) {
+    const uint32_t intents = 5;
+    for(uint32_t i = 0; mpu.begin() == 0; i++) {
         Serial.println("Fatal Error: Could not connect to MPU6050");
         if(deviceConnected) {
             sendStringData(MPUError, pTxCharacteristic);
         }
-        delay(2000);
+        delay(1000);
+        Serial.println("Retrying MPU begin...");
+
+        if(i >= intents) {
+            Serial.println("Restarting ESP32");
+            ESP.restart();
+        }
+            
     }
 }
 //----------------------------------------------------------------------
