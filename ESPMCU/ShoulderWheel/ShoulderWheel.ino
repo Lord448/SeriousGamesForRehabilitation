@@ -268,9 +268,10 @@ void loop()
     valueIsDiff = 
     (rawAngle > (pastAngle + HYSTERESYS) || rawAngle < (pastAngle - HYSTERESYS))
     && (rawAngle != pastAngle);
+    valueIsDiff = true; //TODO Quick and dirty solution
 
     if (valueIsDiff) {
-        scaleData(&angle, rawAngle); //At the moment this function does nothing
+        scaleData(&angle, rawAngle); //At the moment this function only copy the data
 #ifndef TEST
         if(deviceConnected && bleRXFlags.doTransmit)
 #else
