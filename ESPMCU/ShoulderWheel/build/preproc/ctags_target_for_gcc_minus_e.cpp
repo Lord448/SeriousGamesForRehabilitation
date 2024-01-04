@@ -19,7 +19,7 @@
 
  * 
 
- * @version   0.1.1
+ * @version   0.2.0
 
  * @date      2023-11-06
 
@@ -27,11 +27,11 @@
 
  * @copyright This Source Code Form is subject to the terms of the Mozilla Public
 
-              License, v. 2.0. If a copy of the MPL was not distributed with this
+ *            License, v. 2.0. If a copy of the MPL was not distributed with this
 
-              file, You can obtain one at https://mozilla.org/MPL/2.0/
+ *            file, You can obtain one at https://mozilla.org/MPL/2.0/
 
-
+ * 
 
  * @todo      Implement enhanced communication with the BLE device
 
@@ -48,26 +48,32 @@
 # 28 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino" 2
 # 29 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino" 2
 
-//Sends the data no matter if the game is requesting information
+//Sends the data even though the game is not requesting information
 //!More battery power will be consumed if defined
-
+//#define TEST
 
 //Configure the battery power notification
-//#define BATT
+
 //Macro to get volts
 
-//Macro to get ADCCounts
+//Macro to get ADCCounts from volts
 
 //Battery volts when discharge
 
 //Battery volts when full charge
 
+//Pin that will sense the voltage of the Battery
+
+//Pin that will handle a LED to notify low battery charge
+
+//Pin that will handle a LED to notify full battery charge
+
 
 //The axys that will use the MPU6050 to get the angle
 //For more detail refer to the MPU6050 datasheet or MPU6050_Light library
+//#define DEFAULT_AXYS_X
+//#define DEFAULT_AXYS_Y
 
-//#define WORKING_AXYS_Y
-//#define WORKING_AXYS_Z
 
 //Define it if the sensor will be in this position
 //#define UPSIDEDOWN_MOUNT
@@ -87,12 +93,6 @@
 //Macro to get the Absolut value
 
 
-//Value for the window on the sending data, avoids noise
-
-
-//Maximum value of the angle units increments
-
-
 // See the following for generating UUIDs:
 // https://www.uuidgenerator.net/
 
@@ -107,13 +107,19 @@
 //----------------------------------------------------------------------
 typedef enum BattFlags {
     LowBatt_t,
-    FullBatt_t
+    FullBatt_t,
+    NormalLevel_t
 }BattFlags;
+
+typedef enum Axys {
+    X,
+    Y,
+    Z
+}Axys;
 //----------------------------------------------------------------------
 //                            PROTOTYPES
 //----------------------------------------------------------------------
 void getData(float *read);
-void scaleData(float *value, float read);
 void sendData(char *buffer, BLECharacteristic *pTXCharacteristic);
 void sendStringData(char *buffer, BLECharacteristic *pTXCharacteristic);
 void mpuCalc(void);
@@ -123,16 +129,26 @@ void battHandler(BattFlags BattFlags);
 //                          GLOBAL VARIABLES
 //----------------------------------------------------------------------
 BLEServer *pServer = 
-# 104 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino" 3 4
+# 110 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino" 3 4
                     __null
-# 104 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+# 110 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
                         ; //Pointer to the BLE server class
 BLECharacteristic *pTxCharacteristic; //Pointer to the TX characteristic
 MPU6050 mpu(Wire); //Object that handles the MPU6050 sensor
-float rawAngle; //Angle obtained from the MPU6050
 bool deviceConnected = false; //Indicates the status of the connection
 bool oldDeviceConnected = false; //Used report the disconection or connection once
 static char Buffer[16]; //Data buffer that will be send to the GATT Client
+//Axys that the MPU6050 will use
+
+
+
+
+Axys workingAxys = Z;
+Axys pastAxys = Z;
+
+
+
+
 //----------------------------------------------------------------------
 //                          RECEIVE STRINGS
 //----------------------------------------------------------------------
@@ -143,15 +159,21 @@ static const char *sleepTX = "Sleep"; //Indicates that the ESP32 needs to go to 
 static const char *wakeupTX = "Wake"; //Indicates that needs to wake up
 static const char *Reset = "Reset"; //Reset the MCU
 static const char *MPUStartCal = "MPUStartCal"; //Start calibration on MPU6050
+static const char *SetAxysX = "AxysX"; //Set the axys X in the MPU6050 
+static const char *SetAxysY = "AxysY"; //Set the axys Y in the MPU6050
+static const char *SetAxysZ = "AxysZ"; //Set the axys Z in the MPU6050
 //----------------------------------------------------------------------
 //                           SEND STRINGS
 //----------------------------------------------------------------------
-static char *MPUError = "MPUError"; //An error has been ocurred between the ESP32 and the MPU6050
-static char *ResetSend = "ResetESP32"; //The ESP32 will reset
-static char *MPUCal = "MPUCal"; //No Move MPU
-static char *MPUReady = "MPUReady"; //The sensor is ready to use
-static char *LowBatt = "LowBatt"; //The battery of the system is low
-static char *FullBatt = "FullBatt"; //The battery of the system is full
+static char *MPUError = "MPUError\n"; //An error has been ocurred between the ESP32 and the MPU6050
+static char *ResetSend = "ResetESP32\n"; //The ESP32 will reset
+static char *MPUCal = "MPUCal\n"; //No Move MPU
+static char *MPUReady = "MPUReady\n"; //The sensor is ready to use
+static char *LowBatt = "LowBatt\n"; //The battery of the system is low
+static char *FullBatt = "FullBatt\n"; //The battery of the system is full
+static char *SettingX = "Working Axys: X\n"; //Reports that the working axys has been changed
+static char *SettingY = "Working Axys: Y\n"; //Reports that the working axys has been changed
+static char *SettingZ = "Working Axys: Z\n"; //Reports that the working axys has been changed
 //----------------------------------------------------------------------
 //                            BLE FLAGS
 //----------------------------------------------------------------------
@@ -188,36 +210,55 @@ class MyCallbacks : public BLECharacteristicCallbacks {
      * @param pCharacteristic Writed characteristic
 
      */
-# 161 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+# 183 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
     void onWrite(BLECharacteristic *pCharacteristic) {
         std::string rxValue = pCharacteristic -> getValue();
+        char rxBuffer[32] = "";
+
         if(rxValue.length() > 0) {
             Serial.print("Received Value: ");
-            for (int i = 0; i < rxValue.length(); i++)
-                Serial.print(rxValue[i]);
+            for (int i = 0; i < rxValue.length(); i++) {
+                if(rxValue[i] > 0x40) { //Filter the other characters
+                    Serial.print(rxValue[i]);
+                    rxBuffer[i] = rxValue[i];
+                }
+            }
+
             Serial.print("\n");
 
-            if(rxValue.compare(doTransmit) == 0) {
+            if(strcmp(rxBuffer, doTransmit) == 0) {
                 bleRXFlags.doTransmit = true;
                 Serial.println("doTransmit true");
             }
-            else if(rxValue.compare(stopTX) == 0) {
+            else if(strcmp(rxBuffer, stopTX) == 0) {
                 bleRXFlags.doTransmit = false;
                 Serial.println("doTransmit false");
             }
-            else if(rxValue.compare(sleepTX) == 0) {
+            else if(strcmp(rxBuffer, sleepTX) == 0) {
                 bleRXFlags.sleep = true;
                 Serial.println("sleep true");
             }
-            else if(rxValue.compare(wakeupTX) == 0) {
+            else if(strcmp(rxBuffer, wakeupTX) == 0) {
                 bleRXFlags.sleep = false;
                 Serial.println("sleep false");
             }
-            else if(rxValue.compare(MPUStartCal) == 0) {
+            else if(strcmp(rxBuffer, MPUStartCal) == 0) {
                 bleRXFlags.mpuCal = true;
                 Serial.println("mpuCal true");
             }
-            else if(rxValue.compare(Reset) == 0) {
+            else if(strcmp(rxBuffer, SetAxysX) == 0) {
+                workingAxys = X;
+                sendStringData(SettingX, pTxCharacteristic);
+            }
+            else if(strcmp(rxBuffer, SetAxysY) == 0) {
+                workingAxys = Y;
+                sendStringData(SettingY, pTxCharacteristic);
+            }
+            else if(strcmp(rxBuffer,SetAxysZ) == 0) {
+                workingAxys = Z;
+                sendStringData(SettingZ, pTxCharacteristic);
+            }
+            else if(strcmp(rxBuffer, Reset) == 0) {
                 Serial.println("Reseting ESP32");
                 sendStringData(ResetSend, pTxCharacteristic);
                 ESP.restart();
@@ -235,14 +276,22 @@ void setup()
     Serial.begin(115200);
     Wire.begin();
 
-
-
-
-
+    //Init flags structure
+    bool *pFlags = (bool *) &bleRXFlags;
+    for(uint32_t i = 0; i < sizeof(bleRXFlags); i++, pFlags++)
+        *pFlags = false;
 
     //Config pin
 
 
+
+
+
+    pinMode(16 /*Comment this to disable the PIN*/, 0x03);
+
+
+
+    pinMode(17 /*Comment this to disable the PIN*/, 0x03);
 
 
     // Create the BLE Device
@@ -290,27 +339,17 @@ void loop()
     float pastAngle = 0;
     float angle;
     uint32_t BattVoltage;
-    bool valueIsDiff = false;
 
     //Data process
- getData(&rawAngle); //Getting data from the sensor and store it in rawAngle
+ getData(&angle); //Getting data from the sensor
 
-    //Checking if is worth to send the data
-    valueIsDiff =
-    (rawAngle > (pastAngle + 10) || rawAngle < (pastAngle - 10))
-    && (rawAngle != pastAngle);
-
-    if (valueIsDiff) {
-        scaleData(&angle, rawAngle); //At the moment this function does nothing
+    if(deviceConnected && bleRXFlags.doTransmit)
 
 
 
-        if(deviceConnected)
-
-        {
-            sprintf(Buffer, "%3.2f\n", angle); //Building the string
-            sendStringData(Buffer, pTxCharacteristic); //Sending to the GATT Client
-        }
+    {
+        sprintf(Buffer, "%3.2f\n", angle); //Building the string
+        sendStringData(Buffer, pTxCharacteristic); //Sending to the GATT Client
     }
 
     // BLE device disconnect
@@ -342,13 +381,15 @@ void loop()
 
     //Check battery voltage
 
+    BattVoltage = analogRead(33);
+    if(BattVoltage <= ((float)1.5*4095)/3.3f /*Value analog scaled with OpAmps*/)
+        battHandler(LowBatt_t);
+    else if(BattVoltage >= ((float)3*4095)/3.3f /*Value analog scaled with OpAmps*/)
+        battHandler(FullBatt_t);
+    else
+        battHandler(NormalLevel_t);
 
-
-
-
-
-
-    pastAngle = rawAngle;
+    pastAngle = angle;
 }
 //----------------------------------------------------------------------
 //                         DATA PROCESS FUNCTIONS
@@ -366,43 +407,30 @@ void loop()
  * @param read: Value where is saved the mean
 
  */
-# 332 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+# 373 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
 void getData(float *read) {
     const uint32_t numberOfValues = 8;
     float lectures = 0;
     float tmp = 0;
     for(uint32_t i = 0; i < numberOfValues; i++) {
         mpu.update();
-
-        tmp = mpu.getAngleX();
-
-
-
-
-
-
-
+        switch (workingAxys) {
+            case Y:
+                tmp = mpu.getAngleY();
+            break;
+            case Z:
+                tmp = mpu.getAngleZ();
+            break;
+            case X:
+            default:
+                tmp = mpu.getAngleX();
+            break;
+        }
         if(tmp < 0) //Adjust to get absolute scale
             tmp += 360;
         lectures += tmp;
     }
     *read = lectures/numberOfValues;
-}
-
-/**
-
- * @brief Scales and proccess the data so it can be send to the mobile
-
- * @note  The data is already scaled on the GetData method modify if needed
-
- * @param value: pointer to the value that will be sent
-
- * @param read: raw read of the value
-
- */
-# 360 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
-void scaleData(float *value, float read) {
-    *value = read; //The data is already scaled because the mean requires the adjust
 }
 
 /**
@@ -426,7 +454,7 @@ void scaleData(float *value, float read) {
  * @param decimals: Number of decimals presicion (for IEEE Standard 7 max)
 
  */
-# 375 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+# 409 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
 void splitFloat(float value, int *intPart, int *fraccPart, uint32_t decimals) {
     uint32_t decMultiplier = 1;
 
@@ -456,7 +484,7 @@ void splitFloat(float value, int *intPart, int *fraccPart, uint32_t decimals) {
  * @param pTXCharacteristic Characteristic that will be modified
 
  */
-# 399 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+# 433 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
 void sendStringData(char *buffer, BLECharacteristic *pTXCharacteristic) {
     pTXCharacteristic -> setValue((uint8_t *)buffer, strlen(buffer));
     pTXCharacteristic -> notify();
@@ -474,7 +502,7 @@ void sendStringData(char *buffer, BLECharacteristic *pTXCharacteristic) {
  * @param pTXCharacteristic Characteristic that will be modified
 
  */
-# 411 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+# 445 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
 void sendData(char *buffer, BLECharacteristic *pTXCharacteristic) {
     char charTX;
     for(uint32_t i = 0; i <= strlen(buffer); i++) {
@@ -497,7 +525,7 @@ void sendData(char *buffer, BLECharacteristic *pTXCharacteristic) {
  * @note  Do not move the sensor when calibration is going on
 
  */
-# 430 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+# 464 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
 void mpuCalc(void) {
     sendStringData(MPUCal, pTxCharacteristic);
     Serial.println("MPU About to calibrate, no move");
@@ -521,7 +549,7 @@ void mpuCalc(void) {
  *        if a maximum value is reached the ESP32 goes to reset
 
  */
-# 448 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+# 482 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
 void fatalError(void) {
     const uint32_t intents = 5;
     for(uint32_t i = 0; mpu.begin() == 0; i++) {
@@ -551,22 +579,48 @@ void fatalError(void) {
  * @param BattFlags 
 
  */
-# 473 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
-void battHandler(BattFlags BattFlags) {
+# 507 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+void battHandler(BattFlags battFlags) {
     const uint32_t period = 2500; //2.5segs
     static uint32_t time = millis();
+    static BattFlags pastState;
+    static uint16_t counter = 0;
 
     if(millis() > time + period) {
-        switch(BattFlags) {
+        switch(battFlags) {
             case LowBatt_t:
                 Serial.println("Low battery");
                 sendStringData(LowBatt, pTxCharacteristic);
+
+                digitalWrite(16 /*Comment this to disable the PIN*/, 1);
+
+
+                digitalWrite(17 /*Comment this to disable the PIN*/, 0);
+
             break;
             case FullBatt_t:
-                Serial.println("Full battery");
-                sendStringData(FullBatt, pTxCharacteristic);
+                if(counter < 3) { //Reports it 3 times
+                    Serial.println("Full battery");
+                    sendStringData(FullBatt, pTxCharacteristic);
+                    counter++;
+
+                digitalWrite(16 /*Comment this to disable the PIN*/, 0);
+
+
+                digitalWrite(17 /*Comment this to disable the PIN*/, 1);
+
+                }
+            break;
+            case NormalLevel_t:
+
+                digitalWrite(16 /*Comment this to disable the PIN*/, 0);
+
+
+                digitalWrite(17 /*Comment this to disable the PIN*/, 0);
+
             break;
         }
         time = millis();
+        pastState = battFlags;
     }
 }

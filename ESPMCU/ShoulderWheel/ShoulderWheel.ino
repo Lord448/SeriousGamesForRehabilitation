@@ -8,13 +8,13 @@
  *            sends fixed strings to notify to the mobile the current status of the
  *            embedded device
  * 
- * @version   0.1.1
+ * @version   0.2.0
  * @date      2023-11-06
  * 
  * @copyright This Source Code Form is subject to the terms of the Mozilla Public
-              License, v. 2.0. If a copy of the MPL was not distributed with this
-              file, You can obtain one at https://mozilla.org/MPL/2.0/
-
+ *            License, v. 2.0. If a copy of the MPL was not distributed with this
+ *            file, You can obtain one at https://mozilla.org/MPL/2.0/
+ * 
  * @todo      Implement enhanced communication with the BLE device
  * 
  */
@@ -27,26 +27,32 @@
 #include <MPU6050_light.h>
 #include "Wire.h"
 
-//Sends the data no matter if the game is requesting information
+//Sends the data even though the game is not requesting information
 //!More battery power will be consumed if defined
-#define TEST
+//#define TEST
 
 //Configure the battery power notification
-//#define BATT
+#define BATT
 //Macro to get volts
 #define toVolts(x) (x*3.3f)/4095
-//Macro to get ADCCounts
+//Macro to get ADCCounts from volts
 #define toADCCount(x) ((float)x*4095)/3.3f
 //Battery volts when discharge
 #define BATTERY_LOW_VOLTAGE toADCCount(1.5) //Value analog scaled with OpAmps
 //Battery volts when full charge
 #define BATTERY_FULL_VOLTAGE toADCCount(3) //Value analog scaled with OpAmps
+//Pin that will sense the voltage of the Battery
+#define ANALOG_PIN 33
+//Pin that will handle a LED to notify low battery charge
+#define BATT_LED_LOW 16 //Comment this to disable the PIN
+//Pin that will handle a LED to notify full battery charge
+#define BATT_LED_FULL 17 //Comment this to disable the PIN
 
 //The axys that will use the MPU6050 to get the angle
 //For more detail refer to the MPU6050 datasheet or MPU6050_Light library
-#define WORKING_AXYS_X
-//#define WORKING_AXYS_Y
-//#define WORKING_AXYS_Z
+//#define DEFAULT_AXYS_X
+//#define DEFAULT_AXYS_Y
+#define DEFAULT_AXYS_Z
 
 //Define it if the sensor will be in this position
 //#define UPSIDEDOWN_MOUNT
@@ -58,19 +64,13 @@
 //Led pin on the ESP32 board used
 //it indicates if a BLE device is connected
 //USE 0xFF or comment to disable it
-#define LED_PIN 0xFF
+#define BLE_LED_PIN 0xFF
 
 //Macro to know if the led pin of the ESP32 is used
-#define LED_ENABLED (LED_PIN != 0xFF && defined(LED_PIN))
+#define LED_ENABLED (BLE_LED_PIN != 0xFF && defined(BLE_LED_PIN))
 
 //Macro to get the Absolut value
 #define ABS(x) x>0? x:-x
-
-//Value for the window on the sending data, avoids noise
-#define HYSTERESYS 10
-
-//Maximum value of the angle units increments
-#define MAX_INCREMENT 50.0
 
 // See the following for generating UUIDs:
 // https://www.uuidgenerator.net/
@@ -86,13 +86,19 @@
 //----------------------------------------------------------------------
 typedef enum BattFlags {
     LowBatt_t,
-    FullBatt_t
+    FullBatt_t,
+    NormalLevel_t
 }BattFlags;
+
+typedef enum Axys {
+    X,
+    Y,
+    Z
+}Axys;
 //----------------------------------------------------------------------
 //                            PROTOTYPES
 //----------------------------------------------------------------------
 void getData(float *read);
-void scaleData(float *value, float read);
 void sendData(char *buffer, BLECharacteristic *pTXCharacteristic);
 void sendStringData(char *buffer, BLECharacteristic *pTXCharacteristic);
 void mpuCalc(void);
@@ -104,10 +110,20 @@ void battHandler(BattFlags BattFlags);
 BLEServer *pServer = NULL; //Pointer to the BLE server class
 BLECharacteristic *pTxCharacteristic; //Pointer to the TX characteristic
 MPU6050 mpu(Wire); //Object that handles the MPU6050 sensor
-float rawAngle; //Angle obtained from the MPU6050
 bool deviceConnected = false;  //Indicates the status of the connection
 bool oldDeviceConnected = false;  //Used report the disconection or connection once
 static char Buffer[16]; //Data buffer that will be send to the GATT Client
+//Axys that the MPU6050 will use
+#ifdef DEFAULT_AXYS_Y
+Axys workingAxys = Y;
+Axys pastAxys = Y;
+#elif defined(DEFAULT_AXYS_Z)
+Axys workingAxys = Z;
+Axys pastAxys = Z;
+#else
+Axys workingAxys = X;
+Axys pastAxys = X;
+#endif
 //----------------------------------------------------------------------
 //                          RECEIVE STRINGS
 //----------------------------------------------------------------------
@@ -118,15 +134,21 @@ static const char *sleepTX = "Sleep"; //Indicates that the ESP32 needs to go to 
 static const char *wakeupTX = "Wake"; //Indicates that needs to wake up
 static const char *Reset = "Reset"; //Reset the MCU
 static const char *MPUStartCal = "MPUStartCal"; //Start calibration on MPU6050
+static const char *SetAxysX = "AxysX"; //Set the axys X in the MPU6050 
+static const char *SetAxysY = "AxysY"; //Set the axys Y in the MPU6050
+static const char *SetAxysZ = "AxysZ"; //Set the axys Z in the MPU6050
 //----------------------------------------------------------------------
 //                           SEND STRINGS
 //----------------------------------------------------------------------
-static char *MPUError = "MPUError"; //An error has been ocurred between the ESP32 and the MPU6050
-static char *ResetSend = "ResetESP32"; //The ESP32 will reset
-static char *MPUCal = "MPUCal"; //No Move MPU
-static char *MPUReady = "MPUReady"; //The sensor is ready to use
-static char *LowBatt = "LowBatt"; //The battery of the system is low
-static char *FullBatt = "FullBatt"; //The battery of the system is full
+static char *MPUError = "MPUError\n"; //An error has been ocurred between the ESP32 and the MPU6050
+static char *ResetSend = "ResetESP32\n"; //The ESP32 will reset
+static char *MPUCal = "MPUCal\n"; //No Move MPU
+static char *MPUReady = "MPUReady\n"; //The sensor is ready to use
+static char *LowBatt = "LowBatt\n"; //The battery of the system is low
+static char *FullBatt = "FullBatt\n"; //The battery of the system is full
+static char *SettingX = "Working Axys: X\n"; //Reports that the working axys has been changed
+static char *SettingY = "Working Axys: Y\n"; //Reports that the working axys has been changed
+static char *SettingZ = "Working Axys: Z\n"; //Reports that the working axys has been changed
 //----------------------------------------------------------------------
 //                            BLE FLAGS
 //----------------------------------------------------------------------
@@ -160,33 +182,52 @@ class MyCallbacks : public BLECharacteristicCallbacks {
      */
     void onWrite(BLECharacteristic *pCharacteristic) {
         std::string rxValue = pCharacteristic -> getValue();
+        char rxBuffer[32] = "";
+
         if(rxValue.length() > 0) {
             Serial.print("Received Value: ");
-            for (int i = 0; i < rxValue.length(); i++)
-                Serial.print(rxValue[i]);
+            for (int i = 0; i < rxValue.length(); i++) {
+                if(rxValue[i] > 0x40) { //Filter the other characters
+                    Serial.print(rxValue[i]);
+                    rxBuffer[i] = rxValue[i];
+                }
+            }
+                
             Serial.print("\n");
             
-            if(rxValue.compare(doTransmit) == 0) {
+            if(strcmp(rxBuffer, doTransmit) == 0) {
                 bleRXFlags.doTransmit = true;
                 Serial.println("doTransmit true");
             }
-            else if(rxValue.compare(stopTX) == 0) {
+            else if(strcmp(rxBuffer, stopTX) == 0) {
                 bleRXFlags.doTransmit = false;
                 Serial.println("doTransmit false");    
             }
-            else if(rxValue.compare(sleepTX) == 0) {
+            else if(strcmp(rxBuffer, sleepTX) == 0) {
                 bleRXFlags.sleep = true;
                 Serial.println("sleep true");
             }
-            else if(rxValue.compare(wakeupTX) == 0) {
+            else if(strcmp(rxBuffer, wakeupTX) == 0) {
                 bleRXFlags.sleep = false;
                 Serial.println("sleep false");
             }
-            else if(rxValue.compare(MPUStartCal) == 0) {
+            else if(strcmp(rxBuffer, MPUStartCal) == 0) {
                 bleRXFlags.mpuCal = true;
                 Serial.println("mpuCal true");
             }
-            else if(rxValue.compare(Reset) == 0) {
+            else if(strcmp(rxBuffer, SetAxysX) == 0) {
+                workingAxys = X;
+                sendStringData(SettingX, pTxCharacteristic);
+            }
+            else if(strcmp(rxBuffer, SetAxysY) == 0) {
+                workingAxys = Y;
+                sendStringData(SettingY, pTxCharacteristic);
+            }
+            else if(strcmp(rxBuffer,SetAxysZ) == 0) {
+                workingAxys = Z;
+                sendStringData(SettingZ, pTxCharacteristic);
+            }
+            else if(strcmp(rxBuffer, Reset) == 0) {
                 Serial.println("Reseting ESP32");
                 sendStringData(ResetSend, pTxCharacteristic);
                 ESP.restart();
@@ -211,8 +252,16 @@ void setup()
 #endif
     //Config pin
 #if LED_ENABLED
-    pinMode(LED_PIN, OUTPUT);
-#endif  
+    pinMode(BLE_LED_PIN, OUTPUT);
+#endif 
+
+#ifdef BATT_LED_LOW
+    pinMode(BATT_LED_LOW, OUTPUT);
+#endif
+
+#ifdef BATT_LED_FULL
+    pinMode(BATT_LED_FULL, OUTPUT);
+#endif
 
     // Create the BLE Device
     BLEDevice::init(SERVER_NAME);
@@ -259,35 +308,24 @@ void loop()
     float pastAngle = 0;
     float angle;
     uint32_t BattVoltage;
-    bool valueIsDiff = false;
     
     //Data process
-	getData(&rawAngle); //Getting data from the sensor and store it in rawAngle
-
-    //Checking if is worth to send the data
-    valueIsDiff = 
-    (rawAngle > (pastAngle + HYSTERESYS) || rawAngle < (pastAngle - HYSTERESYS))
-    && (rawAngle != pastAngle);
-    valueIsDiff = true; //TODO Quick and dirty solution
-
-    if (valueIsDiff) {
-        scaleData(&angle, rawAngle); //At the moment this function only copy the data
+	getData(&angle); //Getting data from the sensor
 #ifndef TEST
-        if(deviceConnected && bleRXFlags.doTransmit)
+    if(deviceConnected && bleRXFlags.doTransmit)
 #else
-        if(deviceConnected)
+    if(deviceConnected)
 #endif
-        {
-            sprintf(Buffer, "%3.2f\n", angle); //Building the string
-            sendStringData(Buffer, pTxCharacteristic); //Sending to the GATT Client
-        }
+    {
+        sprintf(Buffer, "%3.2f\n", angle); //Building the string
+        sendStringData(Buffer, pTxCharacteristic); //Sending to the GATT Client
     }
-    
+
     // BLE device disconnect
     if (!deviceConnected && oldDeviceConnected) {
 #if LED_ENABLED
-        if(digitalRead(LED_PIN) == 1)
-            digitalWrite(LED_PIN, 0);
+        if(digitalRead(BLE_LED_PIN) == 1)
+            digitalWrite(BLE_LED_PIN, 0);
 #endif
         delay(500); // give the bluetooth stack the chance to get things ready
         pServer->startAdvertising(); // restart advertising
@@ -298,8 +336,8 @@ void loop()
     // BLE device connect
     if (deviceConnected && !oldDeviceConnected) {
 #if LED_ENABLED
-		if(digitalRead(LED_PIN) == 0)
-            digitalWrite(LED_PIN, 1);
+		if(digitalRead(BLE_LED_PIN) == 0)
+            digitalWrite(BLE_LED_PIN, 1);
 #endif
         oldDeviceConnected = deviceConnected;
     }
@@ -315,10 +353,12 @@ void loop()
     BattVoltage = analogRead(ANALOG_PIN);
     if(BattVoltage <= BATTERY_LOW_VOLTAGE)
         battHandler(LowBatt_t);
-    else if(BattVoltage >= BATTERY_LOW_VOLTAGE)
+    else if(BattVoltage >= BATTERY_FULL_VOLTAGE)
         battHandler(FullBatt_t);
+    else
+        battHandler(NormalLevel_t);
 #endif
-    pastAngle = rawAngle;
+    pastAngle = angle;
 }
 //----------------------------------------------------------------------
 //                         DATA PROCESS FUNCTIONS
@@ -336,30 +376,23 @@ void getData(float *read) {
     float tmp = 0;
     for(uint32_t i = 0; i < numberOfValues; i++) {
         mpu.update();
-#ifdef WORKING_AXYS_X
-        tmp = mpu.getAngleX();
-#elif defined(WORKING_AXYS_Y)
-        tmp = mpu.getAngleY();
-#elif defined(WORKING_AXYS_Z)
-        tmp = mpu.getAngleZ();
-#else
-        tmp = mpu.getAngleX();
-#endif
+        switch (workingAxys) {    
+            case Y:
+                tmp = mpu.getAngleY();
+            break;
+            case Z:
+                tmp = mpu.getAngleZ();
+            break;
+            case X:
+            default:
+                tmp = mpu.getAngleX();
+            break;
+        }
         if(tmp < 0) //Adjust to get absolute scale
             tmp += 360;
         lectures += tmp;
     }
     *read = lectures/numberOfValues;
-}
-
-/**
- * @brief Scales and proccess the data so it can be send to the mobile
- * @note  The data is already scaled on the GetData method modify if needed
- * @param value: pointer to the value that will be sent
- * @param read: raw read of the value
- */
-void scaleData(float *value, float read) {
-    *value = read; //The data is already scaled because the mean requires the adjust
 }
 
 /**
@@ -471,21 +504,47 @@ void fatalError(void) {
  * 
  * @param BattFlags 
  */
-void battHandler(BattFlags BattFlags) {
+void battHandler(BattFlags battFlags) {
     const uint32_t period = 2500; //2.5segs
     static uint32_t time = millis();
+    static BattFlags pastState;
+    static uint16_t counter = 0;
     
     if(millis() > time + period) {
-        switch(BattFlags) {
+        switch(battFlags) {
             case LowBatt_t:
                 Serial.println("Low battery");
                 sendStringData(LowBatt, pTxCharacteristic);
+#ifdef BATT_LED_LOW
+                digitalWrite(BATT_LED_LOW, 1);
+#endif
+#ifdef BATT_LED_FULL
+                digitalWrite(BATT_LED_FULL, 0);
+#endif
             break;
             case FullBatt_t:
-                Serial.println("Full battery");
-                sendStringData(FullBatt, pTxCharacteristic);
+                if(counter < 3) { //Reports it 3 times
+                    Serial.println("Full battery");
+                    sendStringData(FullBatt, pTxCharacteristic);
+                    counter++;
+#ifdef BATT_LED_LOW
+                digitalWrite(BATT_LED_LOW, 0);
+#endif
+#ifdef BATT_LED_FULL
+                digitalWrite(BATT_LED_FULL, 1);
+#endif
+                }
+            break;
+            case NormalLevel_t:
+#ifdef BATT_LED_LOW
+                digitalWrite(BATT_LED_LOW, 0);
+#endif
+#ifdef BATT_LED_FULL
+                digitalWrite(BATT_LED_FULL, 0);
+#endif
             break;
         }
         time = millis();
+        pastState = battFlags;
     }
 }
