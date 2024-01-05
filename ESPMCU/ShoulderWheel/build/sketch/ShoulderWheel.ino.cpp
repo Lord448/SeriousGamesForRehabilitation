@@ -10,14 +10,13 @@
  *            sends fixed strings to notify to the mobile the current status of the
  *            embedded device
  * 
- * @version   0.2.0
+ * @version   0.2.2
  * @date      2023-11-06
  * 
  * @copyright This Source Code Form is subject to the terms of the Mozilla Public
  *            License, v. 2.0. If a copy of the MPL was not distributed with this
  *            file, You can obtain one at https://mozilla.org/MPL/2.0/
  * 
- * @todo      Implement enhanced communication with the BLE device
  * 
  */
 #include <stdio.h>
@@ -31,24 +30,30 @@
 
 //Sends the data even though the game is not requesting information
 //!More battery power will be consumed if defined
-//#define TEST
+#define TEST
+
+//Types to define the type of data
+#define Volts 1
+#define Counts 2
 
 //Configure the battery power notification
-#define BATT
+#define BATT //Comment to disable battery options
+//If defined send via BLE the voltage of the battery
+#define BATT_SEND_VOLTAGE Counts //Or Volts
 //Macro to get volts
 #define toVolts(x) (x*3.3f)/4095
 //Macro to get ADCCounts from volts
-#define toADCCount(x) ((float)x*4095)/3.3f
+#define toADCCount(x) (int)(((float)x*4095)/3.3f)
 //Battery volts when discharge
-#define BATTERY_LOW_VOLTAGE toADCCount(1.5) //Value analog scaled with OpAmps
+#define BATTERY_LOW_VOLTAGE toADCCount(2.1) //Value analog scaled with OpAmps
 //Battery volts when full charge
-#define BATTERY_FULL_VOLTAGE toADCCount(3) //Value analog scaled with OpAmps
+#define BATTERY_FULL_VOLTAGE toADCCount(2.9) //Value analog scaled with OpAmps
 //Pin that will sense the voltage of the Battery
-#define ANALOG_PIN 33
+#define ANALOG_PIN 14
 //Pin that will handle a LED to notify low battery charge
 #define BATT_LED_LOW 16 //Comment this to disable the PIN
 //Pin that will handle a LED to notify full battery charge
-#define BATT_LED_FULL 17 //Comment this to disable the PIN
+//#define BATT_LED_FULL 17 //Comment this to disable the PIN
 
 //The axys that will use the MPU6050 to get the angle
 //For more detail refer to the MPU6050 datasheet or MPU6050_Light library
@@ -66,7 +71,7 @@
 //Led pin on the ESP32 board used
 //it indicates if a BLE device is connected
 //USE 0xFF or comment to disable it
-#define BLE_LED_PIN 0xFF
+#define BLE_LED_PIN 33
 
 //Macro to know if the led pin of the ESP32 is used
 #define LED_ENABLED (BLE_LED_PIN != 0xFF && defined(BLE_LED_PIN))
@@ -242,15 +247,15 @@ class MyCallbacks : public BLECharacteristicCallbacks {
 //----------------------------------------------------------------------
 //                              SETUP
 //----------------------------------------------------------------------
-#line 243 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+#line 248 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
 void setup();
-#line 306 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+#line 311 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
 void loop();
-#line 409 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+#line 440 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
 void splitFloat(float value, int *intPart, int *fraccPart, uint32_t decimals);
-#line 507 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+#line 538 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
 void battHandler(BattFlags battFlags);
-#line 243 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+#line 248 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
 void setup()
 {
     Serial.begin(115200);
@@ -319,6 +324,9 @@ void loop()
     float pastAngle = 0;
     float angle;
     uint32_t BattVoltage;
+#ifdef BATT_SEND_VOLTAGE
+    char BattBuffer[32] = "";
+#endif
     
     //Data process
 	getData(&angle); //Getting data from the sensor
@@ -330,7 +338,16 @@ void loop()
     {
         sprintf(Buffer, "%3.2f\n", angle); //Building the string
         sendStringData(Buffer, pTxCharacteristic); //Sending to the GATT Client
+#if LED_ENABLED
+        digitalWrite(BLE_LED_PIN, 1);
+#endif 
     }
+#if LED_ENABLED    
+    else {
+        digitalWrite(BLE_LED_PIN, 0);
+    }
+#endif
+
 
     // BLE device disconnect
     if (!deviceConnected && oldDeviceConnected) {
@@ -362,6 +379,20 @@ void loop()
     //Check battery voltage
 #ifdef BATT
     BattVoltage = analogRead(ANALOG_PIN);
+    #ifdef BATT_SEND_VOLTAGE
+        static uint32_t time = millis();
+        const uint32_t period = 2000; //Each 2 seconds
+        if(millis() > time + period) {
+            #if BATT_SEND_VOLTAGE == Volts
+                sprintf(BattBuffer, "Batt: %2.2f", toVolts(BattVoltage));
+                sendStringData(BattBuffer, pTxCharacteristic);
+            #elif BATT_SEND_VOLTAGE == Counts
+                sprintf(BattBuffer, "Batt: %d", BattVoltage);
+                sendStringData(BattBuffer, pTxCharacteristic);
+            #endif
+            time = millis();
+        }
+    #endif
     if(BattVoltage <= BATTERY_LOW_VOLTAGE)
         battHandler(LowBatt_t);
     else if(BattVoltage >= BATTERY_FULL_VOLTAGE)
