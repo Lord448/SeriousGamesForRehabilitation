@@ -75,12 +75,15 @@
 
 //The axys that will use the MPU6050 to get the angle
 //For more detail refer to the MPU6050 datasheet or MPU6050_Light library
-//#define DEFAULT_AXYS_X
-//#define DEFAULT_AXYS_Y
 
+//#define DEFAULT_AXYS_Y
+//#define DEFAULT_AXYS_Z
 
 //Define it if the sensor will be in this position
 //#define UPSIDEDOWN_MOUNT
+
+//Defines the filter of the MPU6050, undefined sets default (0.98)
+//#define FILTER_COEF
 
 //Name that will appear on the mobile device
 //!Needs to be the same as declared in the game
@@ -133,9 +136,9 @@ void battHandler(BattFlags BattFlags);
 //                          GLOBAL VARIABLES
 //----------------------------------------------------------------------
 BLEServer *pServer = 
-# 115 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino" 3 4
+# 118 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino" 3 4
                     __null
-# 115 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+# 118 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
                         ; //Pointer to the BLE server class
 BLECharacteristic *pTxCharacteristic; //Pointer to the TX characteristic
 MPU6050 mpu(Wire); //Object that handles the MPU6050 sensor
@@ -147,11 +150,11 @@ static char Buffer[16]; //Data buffer that will be send to the GATT Client
 
 
 
-Axys workingAxys = Z;
-Axys pastAxys = Z;
 
 
 
+Axys workingAxys = X;
+Axys pastAxys = X;
 
 //----------------------------------------------------------------------
 //                          RECEIVE STRINGS
@@ -214,7 +217,7 @@ class MyCallbacks : public BLECharacteristicCallbacks {
      * @param pCharacteristic Writed characteristic
 
      */
-# 188 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+# 191 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
     void onWrite(BLECharacteristic *pCharacteristic) {
         std::string rxValue = pCharacteristic -> getValue();
         char rxBuffer[32] = "";
@@ -406,7 +409,7 @@ void loop()
 
 
 
-                sprintf(BattBuffer, "Batt: %d", BattVoltage);
+                sprintf(BattBuffer, "Batt: %d\n", BattVoltage);
                 sendStringData(BattBuffer, pTxCharacteristic);
 
             time = millis();
@@ -437,11 +440,12 @@ void loop()
  * @param read: Value where is saved the mean
 
  */
-# 404 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+# 407 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
 void getData(float *read) {
     const uint32_t numberOfValues = 8;
     float lectures = 0;
     float tmp = 0;
+    float mean = 0;
     for(uint32_t i = 0; i < numberOfValues; i++) {
         mpu.update();
         switch (workingAxys) {
@@ -460,7 +464,9 @@ void getData(float *read) {
             tmp += 360;
         lectures += tmp;
     }
-    *read = lectures/numberOfValues;
+    mean = lectures/numberOfValues;
+    mean -= 360;
+    *read = mean>0? mean:-mean;
 }
 
 /**
@@ -484,7 +490,7 @@ void getData(float *read) {
  * @param decimals: Number of decimals presicion (for IEEE Standard 7 max)
 
  */
-# 440 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+# 446 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
 void splitFloat(float value, int *intPart, int *fraccPart, uint32_t decimals) {
     uint32_t decMultiplier = 1;
 
@@ -514,7 +520,7 @@ void splitFloat(float value, int *intPart, int *fraccPart, uint32_t decimals) {
  * @param pTXCharacteristic Characteristic that will be modified
 
  */
-# 464 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+# 470 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
 void sendStringData(char *buffer, BLECharacteristic *pTXCharacteristic) {
     pTXCharacteristic -> setValue((uint8_t *)buffer, strlen(buffer));
     pTXCharacteristic -> notify();
@@ -532,7 +538,7 @@ void sendStringData(char *buffer, BLECharacteristic *pTXCharacteristic) {
  * @param pTXCharacteristic Characteristic that will be modified
 
  */
-# 476 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+# 482 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
 void sendData(char *buffer, BLECharacteristic *pTXCharacteristic) {
     char charTX;
     for(uint32_t i = 0; i <= strlen(buffer); i++) {
@@ -555,11 +561,14 @@ void sendData(char *buffer, BLECharacteristic *pTXCharacteristic) {
  * @note  Do not move the sensor when calibration is going on
 
  */
-# 495 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+# 501 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
 void mpuCalc(void) {
     sendStringData(MPUCal, pTxCharacteristic);
     Serial.println("MPU About to calibrate, no move");
     delay(1000);
+
+
+
 
 
 
@@ -579,7 +588,7 @@ void mpuCalc(void) {
  *        if a maximum value is reached the ESP32 goes to reset
 
  */
-# 513 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+# 522 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
 void fatalError(void) {
     const uint32_t intents = 5;
     for(uint32_t i = 0; mpu.begin() == 0; i++) {
@@ -609,7 +618,7 @@ void fatalError(void) {
  * @param BattFlags 
 
  */
-# 538 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+# 547 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
 void battHandler(BattFlags battFlags) {
     const uint32_t period = 2500; //2.5segs
     static uint32_t time = millis();

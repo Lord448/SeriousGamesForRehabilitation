@@ -57,12 +57,15 @@
 
 //The axys that will use the MPU6050 to get the angle
 //For more detail refer to the MPU6050 datasheet or MPU6050_Light library
-//#define DEFAULT_AXYS_X
+#define DEFAULT_AXYS_X
 //#define DEFAULT_AXYS_Y
-#define DEFAULT_AXYS_Z
+//#define DEFAULT_AXYS_Z
 
 //Define it if the sensor will be in this position
 //#define UPSIDEDOWN_MOUNT
+
+//Defines the filter of the MPU6050, undefined sets default (0.98)
+//#define FILTER_COEF
 
 //Name that will appear on the mobile device
 //!Needs to be the same as declared in the game
@@ -247,15 +250,15 @@ class MyCallbacks : public BLECharacteristicCallbacks {
 //----------------------------------------------------------------------
 //                              SETUP
 //----------------------------------------------------------------------
-#line 248 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+#line 251 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
 void setup();
-#line 311 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+#line 314 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
 void loop();
-#line 440 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+#line 446 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
 void splitFloat(float value, int *intPart, int *fraccPart, uint32_t decimals);
-#line 538 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+#line 547 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
 void battHandler(BattFlags battFlags);
-#line 248 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+#line 251 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
 void setup()
 {
     Serial.begin(115200);
@@ -384,10 +387,10 @@ void loop()
         const uint32_t period = 2000; //Each 2 seconds
         if(millis() > time + period) {
             #if BATT_SEND_VOLTAGE == Volts
-                sprintf(BattBuffer, "Batt: %2.2f", toVolts(BattVoltage));
+                sprintf(BattBuffer, "Batt: %2.2f\n", toVolts(BattVoltage));
                 sendStringData(BattBuffer, pTxCharacteristic);
             #elif BATT_SEND_VOLTAGE == Counts
-                sprintf(BattBuffer, "Batt: %d", BattVoltage);
+                sprintf(BattBuffer, "Batt: %d\n", BattVoltage);
                 sendStringData(BattBuffer, pTxCharacteristic);
             #endif
             time = millis();
@@ -416,6 +419,7 @@ void getData(float *read) {
     const uint32_t numberOfValues = 8;
     float lectures = 0;
     float tmp = 0;
+    float mean = 0;
     for(uint32_t i = 0; i < numberOfValues; i++) {
         mpu.update();
         switch (workingAxys) {    
@@ -434,7 +438,9 @@ void getData(float *read) {
             tmp += 360;
         lectures += tmp;
     }
-    *read = lectures/numberOfValues;
+    mean = lectures/numberOfValues;
+    mean -= 360;
+    *read = ABS(mean);
 }
 
 /**
@@ -510,6 +516,9 @@ void mpuCalc(void) {
 #ifdef UPSIDEDOWN_MOUNT
     mpu.upsideDownMounting = true;
 #endif
+#ifdef FILTER_COEF && FILTER_COEF!=NULL
+    mpu.setFilterGyroCoef((float) FILTER_COEF);
+#endif 
     mpu.calcOffsets(); //Gyrometer and Accelerometer
     Serial.println("MPU Calibrated");
     sendStringData(MPUReady, pTxCharacteristic);
