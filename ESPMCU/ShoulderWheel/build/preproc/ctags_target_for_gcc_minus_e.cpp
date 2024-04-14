@@ -55,7 +55,7 @@
 
 
 //Configure the battery power notification
-
+//#define BATT //Comment to disable battery options
 //If defined send via BLE the voltage of the battery
 
 //Macro to get volts
@@ -69,7 +69,7 @@
 //Pin that will sense the voltage of the Battery
 
 //Pin that will handle a LED to notify low battery charge
-
+//#define BATT_LED_LOW 16 //Comment this to disable the PIN
 //Pin that will handle a LED to notify full battery charge
 //#define BATT_LED_FULL 17 //Comment this to disable the PIN
 
@@ -109,6 +109,10 @@
 
 // BLE TX Characteristic -- Here you notify the GATT Client
 
+
+
+//DSP Configurations
+
 //----------------------------------------------------------------------
 //                          ENUMS & STRUCTS
 //----------------------------------------------------------------------
@@ -136,9 +140,9 @@ void battHandler(BattFlags BattFlags);
 //                          GLOBAL VARIABLES
 //----------------------------------------------------------------------
 BLEServer *pServer = 
-# 118 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino" 3 4
+# 122 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino" 3 4
                     __null
-# 118 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+# 122 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
                         ; //Pointer to the BLE server class
 BLECharacteristic *pTxCharacteristic; //Pointer to the TX characteristic
 MPU6050 mpu(Wire); //Object that handles the MPU6050 sensor
@@ -217,7 +221,7 @@ class MyCallbacks : public BLECharacteristicCallbacks {
      * @param pCharacteristic Writed characteristic
 
      */
-# 191 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+# 195 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
     void onWrite(BLECharacteristic *pCharacteristic) {
         std::string rxValue = pCharacteristic -> getValue();
         char rxBuffer[32] = "";
@@ -291,16 +295,7 @@ void setup()
     //Config pin
 
     pinMode(33, 0x03);
-
-
-
-    pinMode(16 /*Comment this to disable the PIN*/, 0x03);
-
-
-
-
-
-
+# 278 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
     // Create the BLE Device
     BLEDevice::init("ShoulderWheel");
 
@@ -354,6 +349,12 @@ void loop()
  getData(&angle); //Getting data from the sensor
 
 
+    //Data filter
+    lowPassFilter(&angle);
+
+
+
+
 
     if(deviceConnected)
 
@@ -399,34 +400,51 @@ void loop()
     }
 
     //Check battery voltage
-
-    BattVoltage = analogRead(14);
-
-        static uint32_t time = millis();
-        const uint32_t period = 2000; //Each 2 seconds
-        if(millis() > time + period) {
-
-
-
-
-                sprintf(BattBuffer, "Batt: %d\n", BattVoltage);
-                sendStringData(BattBuffer, pTxCharacteristic);
-
-            time = millis();
-        }
-
-    if(BattVoltage <= (int)(((float)2.1*4095)/3.3f) /*Value analog scaled with OpAmps*/)
-        battHandler(LowBatt_t);
-    else if(BattVoltage >= (int)(((float)2.9*4095)/3.3f) /*Value analog scaled with OpAmps*/)
-        battHandler(FullBatt_t);
-    else
-        battHandler(NormalLevel_t);
-
+# 405 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
     pastAngle = angle;
 }
 //----------------------------------------------------------------------
 //                         DATA PROCESS FUNCTIONS
 //----------------------------------------------------------------------
+
+
+/**
+
+ * @brief 2nd order Butterworth low pass filter for the signal processing
+
+ *        of the MPU6050 this filter has a cutoff frequency of 30Hz 
+
+ * 
+
+ * @param angle: Angle that will be processed
+
+ */
+# 418 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+void lowPassFilter(float *angle)
+{
+    //Constant coefficients for the filter obtained with the equations on the README files
+    const float ACoeff[] = {1.95558189, -0.95654717};
+    const float BCoeff[] = {0.00024132, 0.00048264, 0.00024132};
+    //Variables that interact in the filter difference equation
+    static float x[3] = {0};
+    static float y[3] = {0};
+
+    //Input data of the filter
+    x[0] = *angle;
+    //2nd order Butterworth difference equation
+    y[0] = ACoeff[0]*y[1] + ACoeff[1]*y[2] +
+           BCoeff[0]*x[0] + BCoeff[1]*x[1] + BCoeff[2]*x[2];
+    //Storing data
+    for(uint16_t i = 1; i >= 0; i--)
+    {
+        x[i+1] = x[i];
+        y[i+1] = y[i];
+    }
+    //Output of the filter
+    *angle = y[0];
+}
+
+
 /**
 
  * @brief Gets the mean value of the lectures (6 Lectures)
@@ -440,7 +458,7 @@ void loop()
  * @param read: Value where is saved the mean
 
  */
-# 407 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+# 450 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
 void getData(float *read) {
     const uint32_t numberOfValues = 8;
     float lectures = 0;
@@ -469,43 +487,6 @@ void getData(float *read) {
     *read = mean>0? mean:-mean;
 }
 
-/**
-
- * @brief Split a floating point variable in two integer variables
-
- * 
-
- * @note  IEEE standard has 8 bit for exponential part which means you cannot
-
- *        have more than 7 decimals of presicion
-
- * 
-
- * @param value: Float value that will be splited
-
- * @param intPart: Integer part of the number
-
- * @param fraccPart: Fraccional part of the number 
-
- * @param decimals: Number of decimals presicion (for IEEE Standard 7 max)
-
- */
-# 446 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
-void splitFloat(float value, int *intPart, int *fraccPart, uint32_t decimals) {
-    uint32_t decMultiplier = 1;
-
-    //Decimals limit check
-    if(decimals > 7)
-        decimals = 7;
-    //Getting the multiplier
-    while(decimals > 0) {
-        decMultiplier *= 10;
-        decimals--;
-    }
-    //Calculate the values
-    *intPart = (int) value;
-    *fraccPart = ((value - *intPart) * decMultiplier);
-}
 //----------------------------------------------------------------------
 //                           BLE SEND FUNCTIONS
 //----------------------------------------------------------------------
@@ -520,7 +501,7 @@ void splitFloat(float value, int *intPart, int *fraccPart, uint32_t decimals) {
  * @param pTXCharacteristic Characteristic that will be modified
 
  */
-# 470 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+# 487 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
 void sendStringData(char *buffer, BLECharacteristic *pTXCharacteristic) {
     pTXCharacteristic -> setValue((uint8_t *)buffer, strlen(buffer));
     pTXCharacteristic -> notify();
@@ -538,7 +519,7 @@ void sendStringData(char *buffer, BLECharacteristic *pTXCharacteristic) {
  * @param pTXCharacteristic Characteristic that will be modified
 
  */
-# 482 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+# 499 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
 void sendData(char *buffer, BLECharacteristic *pTXCharacteristic) {
     char charTX;
     for(uint32_t i = 0; i <= strlen(buffer); i++) {
@@ -561,7 +542,7 @@ void sendData(char *buffer, BLECharacteristic *pTXCharacteristic) {
  * @note  Do not move the sensor when calibration is going on
 
  */
-# 501 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+# 518 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
 void mpuCalc(void) {
     sendStringData(MPUCal, pTxCharacteristic);
     Serial.println("MPU About to calibrate, no move");
@@ -588,7 +569,7 @@ void mpuCalc(void) {
  *        if a maximum value is reached the ESP32 goes to reset
 
  */
-# 522 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+# 539 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
 void fatalError(void) {
     const uint32_t intents = 5;
     for(uint32_t i = 0; mpu.begin() == 0; i++) {
@@ -618,7 +599,7 @@ void fatalError(void) {
  * @param BattFlags 
 
  */
-# 547 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+# 564 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
 void battHandler(BattFlags battFlags) {
     const uint32_t period = 2500; //2.5segs
     static uint32_t time = millis();
@@ -631,7 +612,7 @@ void battHandler(BattFlags battFlags) {
                 Serial.println("Low battery");
                 sendStringData(LowBatt, pTxCharacteristic);
 
-                digitalWrite(16 /*Comment this to disable the PIN*/, 1);
+
 
 
 
@@ -643,7 +624,7 @@ void battHandler(BattFlags battFlags) {
                     sendStringData(FullBatt, pTxCharacteristic);
                     counter++;
 
-                digitalWrite(16 /*Comment this to disable the PIN*/, 0);
+
 
 
 
@@ -652,7 +633,7 @@ void battHandler(BattFlags battFlags) {
             break;
             case NormalLevel_t:
 
-                digitalWrite(16 /*Comment this to disable the PIN*/, 0);
+
 
 
 

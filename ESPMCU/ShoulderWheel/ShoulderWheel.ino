@@ -8,14 +8,12 @@
  *            sends fixed strings to notify to the mobile the current status of the
  *            embedded device
  * 
- * @version   0.2.2
+ * @version   0.3.0
  * @date      2023-11-06
  * 
  * @copyright This Source Code Form is subject to the terms of the Mozilla Public
  *            License, v. 2.0. If a copy of the MPL was not distributed with this
  *            file, You can obtain one at https://mozilla.org/MPL/2.0/
- * 
- * 
  */
 #include <stdio.h>
 #include <string.h>
@@ -35,7 +33,7 @@
 #define Counts 2
 
 //Configure the battery power notification
-#define BATT //Comment to disable battery options
+//#define BATT //Comment to disable battery options
 //If defined send via BLE the voltage of the battery
 #define BATT_SEND_VOLTAGE Counts //Or Volts
 //Macro to get volts
@@ -49,7 +47,7 @@
 //Pin that will sense the voltage of the Battery
 #define ANALOG_PIN 14
 //Pin that will handle a LED to notify low battery charge
-#define BATT_LED_LOW 16 //Comment this to disable the PIN
+//#define BATT_LED_LOW 16 //Comment this to disable the PIN
 //Pin that will handle a LED to notify full battery charge
 //#define BATT_LED_FULL 17 //Comment this to disable the PIN
 
@@ -89,6 +87,10 @@
 #define CHARACTERISTIC_UUID_RX "0f16c6ae-7c3a-11ee-b962-0242ac120002"
 // BLE TX Characteristic -- Here you notify the GATT Client
 #define CHARACTERISTIC_UUID_TX "131552ca-7c3a-11ee-b962-0242ac120002" 
+
+
+//DSP Configurations
+#define ENABLE_FILTER
 //----------------------------------------------------------------------
 //                          ENUMS & STRUCTS
 //----------------------------------------------------------------------
@@ -322,6 +324,12 @@ void loop()
     
     //Data process
 	getData(&angle); //Getting data from the sensor
+
+#ifdef ENABLE_FILTER
+    //Data filter
+    lowPassFilter(&angle);
+#endif
+
 #ifndef TEST
     if(deviceConnected && bleRXFlags.doTransmit)
 #else
@@ -397,6 +405,39 @@ void loop()
 //----------------------------------------------------------------------
 //                         DATA PROCESS FUNCTIONS
 //----------------------------------------------------------------------
+
+#ifdef ENABLE_FILTER
+/**
+ * @brief 2nd order Butterworth low pass filter for the signal processing
+ *        of the MPU6050 this filter has a cutoff frequency of 30Hz 
+ * 
+ * @param angle: Angle that will be processed
+ */
+void lowPassFilter(float *angle) 
+{
+    //Constant coefficients for the filter obtained with the equations on the README files
+    const float ACoeff[] = {1.95558189, -0.95654717};
+    const float BCoeff[] = {0.00024132, 0.00048264, 0.00024132};
+    //Variables that interact in the filter difference equation
+    static float x[3] = {0};
+    static float y[3] = {0};
+
+    //Input data of the filter
+    x[0] = *angle;
+    //2nd order Butterworth difference equation
+    y[0] = ACoeff[0]*y[1] + ACoeff[1]*y[2] +
+           BCoeff[0]*x[0] + BCoeff[1]*x[1] + BCoeff[2]*x[2];
+    //Storing data
+    for(uint16_t i = 1; i >= 0; i--) 
+    {
+        x[i+1] = x[i];
+        y[i+1] = y[i];
+    }
+    //Output of the filter
+    *angle = y[0];
+}
+#endif
+
 /**
  * @brief Gets the mean value of the lectures (6 Lectures)
  * @note  Since the mean arithmetics needs the absolut scale (0 - 360) 
@@ -432,32 +473,6 @@ void getData(float *read) {
     *read = ABS(mean);
 }
 
-/**
- * @brief Split a floating point variable in two integer variables
- * 
- * @note  IEEE standard has 8 bit for exponential part which means you cannot
- *        have more than 7 decimals of presicion
- * 
- * @param value: Float value that will be splited
- * @param intPart: Integer part of the number
- * @param fraccPart: Fraccional part of the number 
- * @param decimals: Number of decimals presicion (for IEEE Standard 7 max)
- */
-void splitFloat(float value, int *intPart, int *fraccPart, uint32_t decimals) {
-    uint32_t decMultiplier = 1;
-
-    //Decimals limit check
-    if(decimals > 7) 
-        decimals = 7;
-    //Getting the multiplier
-    while(decimals > 0) {
-        decMultiplier *= 10;
-        decimals--;
-    }
-    //Calculate the values
-    *intPart = (int) value;
-    *fraccPart = ((value - *intPart) * decMultiplier);
-}
 //----------------------------------------------------------------------
 //                           BLE SEND FUNCTIONS
 //----------------------------------------------------------------------
