@@ -1,0 +1,292 @@
+[
+  {
+    "Sourcefile": null,
+    "Include": "",
+    "Includepath": "/home/lord448/.arduino15/packages/esp32/hardware/esp32/2.0.9/cores/esp32"
+  },
+  {
+    "Sourcefile": null,
+    "Include": "",
+    "Includepath": "/home/lord448/.arduino15/packages/esp32/hardware/esp32/2.0.9/variants/esp32"
+  },
+  {
+    "Sourcefile": "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/FIlterDebugShoulderWheel/build/sketch/FIlterDebugShoulderWheel.ino.cpp",
+    "Include": "phyphoxBle.h",
+    "Includepath": "/home/lord448/Arduino/libraries/phyphox_BLE/src"
+  },
+  {
+    "Sourcefile": "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/FIlterDebugShoulderWheel/build/sketch/FIlterDebugShoulderWheel.ino.cpp",
+    "Include": "BLEDevice.h",
+    "Includepath": "/home/lord448/.arduino15/packages/esp32/hardware/esp32/2.0.9/libraries/BLE/src"
+  },
+  {
+    "Sourcefile": "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/FIlterDebugShoulderWheel/build/sketch/FIlterDebugShoulderWheel.ino.cpp",
+    "Include": "MPU6050_light.h",
+    "Includepath": "/home/lord448/Arduino/libraries/MPU6050_light/src"
+  },
+  {
+    "Sourcefile": "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/FIlterDebugShoulderWheel/build/sketch/FIlterDebugShoulderWheel.ino.cpp",
+    "Include": "Wire.h",
+    "Includepath": "/home/lord448/.arduino15/packages/esp32/hardware/esp32/2.0.9/libraries/Wire/src"
+  },
+  {
+    "Sourcefile": "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/FIlterDebugShoulderWheel/build/sketch/FIlterDebugShoulderWheel.ino.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/home/lord448/Arduino/libraries/phyphox_BLE/src/NINAB31serial.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/home/lord448/Arduino/libraries/phyphox_BLE/src/copyToMem.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/home/lord448/Arduino/libraries/phyphox_BLE/src/edit.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/home/lord448/Arduino/libraries/phyphox_BLE/src/element.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/home/lord448/Arduino/libraries/phyphox_BLE/src/error.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/home/lord448/Arduino/libraries/phyphox_BLE/src/errorhandler.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/home/lord448/Arduino/libraries/phyphox_BLE/src/experiment.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/home/lord448/Arduino/libraries/phyphox_BLE/src/exportSet.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/home/lord448/Arduino/libraries/phyphox_BLE/src/exportdata.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/home/lord448/Arduino/libraries/phyphox_BLE/src/graph.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/home/lord448/Arduino/libraries/phyphox_BLE/src/infoField.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/home/lord448/Arduino/libraries/phyphox_BLE/src/phyphoxBLE_ESP32.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/home/lord448/Arduino/libraries/phyphox_BLE/src/phyphoxBLE_NINAB31.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/home/lord448/Arduino/libraries/phyphox_BLE/src/phyphoxBLE_NRF52.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/home/lord448/Arduino/libraries/phyphox_BLE/src/phyphoxBLE_NanoIOT.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/home/lord448/Arduino/libraries/phyphox_BLE/src/sensor.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/home/lord448/Arduino/libraries/phyphox_BLE/src/separator.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/home/lord448/Arduino/libraries/phyphox_BLE/src/subgraph.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/home/lord448/Arduino/libraries/phyphox_BLE/src/value.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/home/lord448/Arduino/libraries/phyphox_BLE/src/view.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/home/lord448/.arduino15/packages/esp32/hardware/esp32/2.0.9/libraries/BLE/src/BLE2902.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/home/lord448/.arduino15/packages/esp32/hardware/esp32/2.0.9/libraries/BLE/src/BLE2904.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/home/lord448/.arduino15/packages/esp32/hardware/esp32/2.0.9/libraries/BLE/src/BLEAddress.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/home/lord448/.arduino15/packages/esp32/hardware/esp32/2.0.9/libraries/BLE/src/BLEAdvertisedDevice.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/home/lord448/.arduino15/packages/esp32/hardware/esp32/2.0.9/libraries/BLE/src/BLEAdvertising.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/home/lord448/.arduino15/packages/esp32/hardware/esp32/2.0.9/libraries/BLE/src/BLEBeacon.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/home/lord448/.arduino15/packages/esp32/hardware/esp32/2.0.9/libraries/BLE/src/BLECharacteristic.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/home/lord448/.arduino15/packages/esp32/hardware/esp32/2.0.9/libraries/BLE/src/BLECharacteristicMap.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/home/lord448/.arduino15/packages/esp32/hardware/esp32/2.0.9/libraries/BLE/src/BLEClient.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/home/lord448/.arduino15/packages/esp32/hardware/esp32/2.0.9/libraries/BLE/src/BLEDescriptor.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/home/lord448/.arduino15/packages/esp32/hardware/esp32/2.0.9/libraries/BLE/src/BLEDescriptorMap.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/home/lord448/.arduino15/packages/esp32/hardware/esp32/2.0.9/libraries/BLE/src/BLEDevice.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/home/lord448/.arduino15/packages/esp32/hardware/esp32/2.0.9/libraries/BLE/src/BLEEddystoneTLM.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/home/lord448/.arduino15/packages/esp32/hardware/esp32/2.0.9/libraries/BLE/src/BLEEddystoneURL.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/home/lord448/.arduino15/packages/esp32/hardware/esp32/2.0.9/libraries/BLE/src/BLEExceptions.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/home/lord448/.arduino15/packages/esp32/hardware/esp32/2.0.9/libraries/BLE/src/BLEHIDDevice.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/home/lord448/.arduino15/packages/esp32/hardware/esp32/2.0.9/libraries/BLE/src/BLERemoteCharacteristic.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/home/lord448/.arduino15/packages/esp32/hardware/esp32/2.0.9/libraries/BLE/src/BLERemoteDescriptor.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/home/lord448/.arduino15/packages/esp32/hardware/esp32/2.0.9/libraries/BLE/src/BLERemoteService.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/home/lord448/.arduino15/packages/esp32/hardware/esp32/2.0.9/libraries/BLE/src/BLEScan.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/home/lord448/.arduino15/packages/esp32/hardware/esp32/2.0.9/libraries/BLE/src/BLESecurity.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/home/lord448/.arduino15/packages/esp32/hardware/esp32/2.0.9/libraries/BLE/src/BLEServer.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/home/lord448/.arduino15/packages/esp32/hardware/esp32/2.0.9/libraries/BLE/src/BLEService.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/home/lord448/.arduino15/packages/esp32/hardware/esp32/2.0.9/libraries/BLE/src/BLEServiceMap.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/home/lord448/.arduino15/packages/esp32/hardware/esp32/2.0.9/libraries/BLE/src/BLEUUID.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/home/lord448/.arduino15/packages/esp32/hardware/esp32/2.0.9/libraries/BLE/src/BLEUtils.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/home/lord448/.arduino15/packages/esp32/hardware/esp32/2.0.9/libraries/BLE/src/BLEValue.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/home/lord448/.arduino15/packages/esp32/hardware/esp32/2.0.9/libraries/BLE/src/FreeRTOS.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/home/lord448/.arduino15/packages/esp32/hardware/esp32/2.0.9/libraries/BLE/src/GeneralUtils.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/home/lord448/Arduino/libraries/MPU6050_light/src/MPU6050_light.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/home/lord448/.arduino15/packages/esp32/hardware/esp32/2.0.9/libraries/Wire/src/Wire.cpp",
+    "Include": "",
+    "Includepath": null
+  }
+]
