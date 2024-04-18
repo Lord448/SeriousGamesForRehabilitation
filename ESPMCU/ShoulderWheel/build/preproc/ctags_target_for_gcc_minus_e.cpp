@@ -19,7 +19,7 @@
 
  * 
 
- * @version   0.2.2
+ * @version   0.3.0
 
  * @date      2023-11-06
 
@@ -31,20 +31,16 @@
 
  *            file, You can obtain one at https://mozilla.org/MPL/2.0/
 
- * 
-
- * 
-
  */
-# 20 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+# 18 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+# 19 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino" 2
+# 20 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino" 2
 # 21 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino" 2
 # 22 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino" 2
 # 23 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino" 2
 # 24 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino" 2
 # 25 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino" 2
 # 26 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino" 2
-# 27 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino" 2
-# 28 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino" 2
 
 //Sends the data even though the game is not requesting information
 //!More battery power will be consumed if defined
@@ -131,6 +127,7 @@ typedef enum Axys {
 //                            PROTOTYPES
 //----------------------------------------------------------------------
 void getData(float *read);
+void lowPassFilter(float *angle);
 void sendData(char *buffer, BLECharacteristic *pTXCharacteristic);
 void sendStringData(char *buffer, BLECharacteristic *pTXCharacteristic);
 void mpuCalc(void);
@@ -140,9 +137,9 @@ void battHandler(BattFlags BattFlags);
 //                          GLOBAL VARIABLES
 //----------------------------------------------------------------------
 BLEServer *pServer = 
-# 122 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino" 3 4
+# 121 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino" 3 4
                     __null
-# 122 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+# 121 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
                         ; //Pointer to the BLE server class
 BLECharacteristic *pTxCharacteristic; //Pointer to the TX characteristic
 MPU6050 mpu(Wire); //Object that handles the MPU6050 sensor
@@ -221,7 +218,7 @@ class MyCallbacks : public BLECharacteristicCallbacks {
      * @param pCharacteristic Writed characteristic
 
      */
-# 195 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+# 194 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
     void onWrite(BLECharacteristic *pCharacteristic) {
         std::string rxValue = pCharacteristic -> getValue();
         char rxBuffer[32] = "";
@@ -295,7 +292,7 @@ void setup()
     //Config pin
 
     pinMode(33, 0x03);
-# 278 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+# 277 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
     // Create the BLE Device
     BLEDevice::init("ShoulderWheel");
 
@@ -338,7 +335,6 @@ void setup()
 //----------------------------------------------------------------------
 void loop()
 {
-    float pastAngle = 0;
     float angle;
     uint32_t BattVoltage;
 
@@ -350,17 +346,18 @@ void loop()
 
 
     //Data filter
-    lowPassFilter(&angle);
+    //lowPassFilter(&angle);
 
 
 
 
 
-    if(deviceConnected)
+    if(deviceConnected && angle > 0 && angle < 360)
 
     {
         sprintf(Buffer, "%3.2f\n", angle); //Building the string
         sendStringData(Buffer, pTxCharacteristic); //Sending to the GATT Client
+
 
         digitalWrite(33, 1);
 
@@ -400,13 +397,36 @@ void loop()
     }
 
     //Check battery voltage
-# 405 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
-    pastAngle = angle;
+# 404 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
 }
 //----------------------------------------------------------------------
 //                         DATA PROCESS FUNCTIONS
 //----------------------------------------------------------------------
 
+
+void setCoef(float *a, float *b)
+{
+    const float CutOffFrequency = 10;
+    const float sqr2 = sqrt(2);
+    static float dt = 0, tn1 = 0;
+
+    float omega = 6.28318530718*(CutOffFrequency);
+    float t = micros()/1.0e6;
+
+    dt = t - tn1;
+    tn1 = t;
+
+    float alpha = omega*dt;
+    float alphaSq = alpha*alpha;
+    float beta[] = {1, sqr2, 1};
+    float D = alphaSq*beta[0] + 2*alpha*beta[1] + 4*beta[2];
+
+    b[0] = alphaSq/D;
+    b[1] = 2*b[0];
+    b[2] = b[0];
+    a[0] = -(2*alphaSq*beta[0] - 8*beta[2])/D;
+    a[1] = -(beta[0]*alphaSq - 2*beta[1]*alpha + 4*beta[2])/D;
+}
 
 /**
 
@@ -419,15 +439,17 @@ void loop()
  * @param angle: Angle that will be processed
 
  */
-# 418 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+# 440 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
 void lowPassFilter(float *angle)
 {
     //Constant coefficients for the filter obtained with the equations on the README files
-    const float ACoeff[] = {1.95558189, -0.95654717};
-    const float BCoeff[] = {0.00024132, 0.00048264, 0.00024132};
+    static float ACoeff[3] = {1.95558189, -0.95654717, 0};
+    static float BCoeff[3] = {0.00024132, 0.00048264, 0.00024132};
     //Variables that interact in the filter difference equation
-    static float x[3] = {0};
-    static float y[3] = {0};
+    static float x[3] = {0, 0, 0};
+    static float y[3] = {0, 0, 0};
+
+    //setCoef(ACoeff, BCoeff);
 
     //Input data of the filter
     x[0] = *angle;
@@ -435,7 +457,7 @@ void lowPassFilter(float *angle)
     y[0] = ACoeff[0]*y[1] + ACoeff[1]*y[2] +
            BCoeff[0]*x[0] + BCoeff[1]*x[1] + BCoeff[2]*x[2];
     //Storing data
-    for(uint16_t i = 1; i >= 0; i--)
+    for(int i = 1; i >= 0; i--)
     {
         x[i+1] = x[i];
         y[i+1] = y[i];
@@ -458,7 +480,7 @@ void lowPassFilter(float *angle)
  * @param read: Value where is saved the mean
 
  */
-# 450 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+# 474 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
 void getData(float *read) {
     const uint32_t numberOfValues = 8;
     float lectures = 0;
@@ -501,7 +523,7 @@ void getData(float *read) {
  * @param pTXCharacteristic Characteristic that will be modified
 
  */
-# 487 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+# 511 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
 void sendStringData(char *buffer, BLECharacteristic *pTXCharacteristic) {
     pTXCharacteristic -> setValue((uint8_t *)buffer, strlen(buffer));
     pTXCharacteristic -> notify();
@@ -519,7 +541,7 @@ void sendStringData(char *buffer, BLECharacteristic *pTXCharacteristic) {
  * @param pTXCharacteristic Characteristic that will be modified
 
  */
-# 499 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+# 523 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
 void sendData(char *buffer, BLECharacteristic *pTXCharacteristic) {
     char charTX;
     for(uint32_t i = 0; i <= strlen(buffer); i++) {
@@ -542,7 +564,7 @@ void sendData(char *buffer, BLECharacteristic *pTXCharacteristic) {
  * @note  Do not move the sensor when calibration is going on
 
  */
-# 518 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+# 542 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
 void mpuCalc(void) {
     sendStringData(MPUCal, pTxCharacteristic);
     Serial.println("MPU About to calibrate, no move");
@@ -569,7 +591,7 @@ void mpuCalc(void) {
  *        if a maximum value is reached the ESP32 goes to reset
 
  */
-# 539 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+# 563 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
 void fatalError(void) {
     const uint32_t intents = 5;
     for(uint32_t i = 0; mpu.begin() == 0; i++) {
@@ -599,7 +621,7 @@ void fatalError(void) {
  * @param BattFlags 
 
  */
-# 564 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+# 588 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
 void battHandler(BattFlags battFlags) {
     const uint32_t period = 2500; //2.5segs
     static uint32_t time = millis();

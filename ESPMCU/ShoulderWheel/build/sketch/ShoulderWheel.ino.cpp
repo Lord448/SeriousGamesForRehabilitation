@@ -10,14 +10,12 @@
  *            sends fixed strings to notify to the mobile the current status of the
  *            embedded device
  * 
- * @version   0.2.2
+ * @version   0.3.0
  * @date      2023-11-06
  * 
  * @copyright This Source Code Form is subject to the terms of the Mozilla Public
  *            License, v. 2.0. If a copy of the MPL was not distributed with this
  *            file, You can obtain one at https://mozilla.org/MPL/2.0/
- * 
- * 
  */
 #include <stdio.h>
 #include <string.h>
@@ -113,6 +111,7 @@ typedef enum Axys {
 //                            PROTOTYPES
 //----------------------------------------------------------------------
 void getData(float *read);
+void lowPassFilter(float *angle);
 void sendData(char *buffer, BLECharacteristic *pTXCharacteristic);
 void sendStringData(char *buffer, BLECharacteristic *pTXCharacteristic);
 void mpuCalc(void);
@@ -254,15 +253,15 @@ class MyCallbacks : public BLECharacteristicCallbacks {
 //----------------------------------------------------------------------
 //                              SETUP
 //----------------------------------------------------------------------
-#line 255 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+#line 254 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
 void setup();
-#line 318 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+#line 317 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
 void loop();
-#line 418 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
-void lowPassFilter(float *angle);
-#line 564 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+#line 410 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+void setCoef(float *a, float *b);
+#line 588 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
 void battHandler(BattFlags battFlags);
-#line 255 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
+#line 254 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
 void setup()
 {
     Serial.begin(115200);
@@ -328,7 +327,6 @@ void setup()
 //----------------------------------------------------------------------
 void loop()
 {
-    float pastAngle = 0;
     float angle;
     uint32_t BattVoltage;
 #ifdef BATT_SEND_VOLTAGE
@@ -340,17 +338,18 @@ void loop()
 
 #ifdef ENABLE_FILTER
     //Data filter
-    lowPassFilter(&angle);
+    //lowPassFilter(&angle);
 #endif
 
 #ifndef TEST
     if(deviceConnected && bleRXFlags.doTransmit)
 #else
-    if(deviceConnected)
+    if(deviceConnected && angle > 0 && angle < 360)
 #endif
     {
         sprintf(Buffer, "%3.2f\n", angle); //Building the string
         sendStringData(Buffer, pTxCharacteristic); //Sending to the GATT Client
+        
 #if LED_ENABLED
         digitalWrite(BLE_LED_PIN, 1);
 #endif 
@@ -413,13 +412,36 @@ void loop()
     else
         battHandler(NormalLevel_t);
 #endif
-    pastAngle = angle;
 }
 //----------------------------------------------------------------------
 //                         DATA PROCESS FUNCTIONS
 //----------------------------------------------------------------------
 
 #ifdef ENABLE_FILTER
+void setCoef(float *a, float *b)
+{
+    const float CutOffFrequency = 10;
+    const float sqr2 = sqrt(2);
+    static float dt = 0, tn1 = 0;
+
+    float omega = 6.28318530718*(CutOffFrequency);
+    float t = micros()/1.0e6;
+
+    dt = t - tn1;
+    tn1 = t;
+
+    float alpha = omega*dt;
+    float alphaSq = alpha*alpha;
+    float beta[] = {1, sqr2, 1};
+    float D = alphaSq*beta[0] + 2*alpha*beta[1] + 4*beta[2];
+
+    b[0] = alphaSq/D;
+    b[1] = 2*b[0];
+    b[2] = b[0];
+    a[0] = -(2*alphaSq*beta[0] - 8*beta[2])/D;
+    a[1] = -(beta[0]*alphaSq - 2*beta[1]*alpha + 4*beta[2])/D;
+}
+
 /**
  * @brief 2nd order Butterworth low pass filter for the signal processing
  *        of the MPU6050 this filter has a cutoff frequency of 30Hz 
@@ -429,11 +451,13 @@ void loop()
 void lowPassFilter(float *angle) 
 {
     //Constant coefficients for the filter obtained with the equations on the README files
-    const float ACoeff[] = {1.95558189, -0.95654717};
-    const float BCoeff[] = {0.00024132, 0.00048264, 0.00024132};
+    static float ACoeff[3] = {1.95558189, -0.95654717, 0};
+    static float BCoeff[3] = {0.00024132, 0.00048264, 0.00024132};
     //Variables that interact in the filter difference equation
-    static float x[3] = {0};
-    static float y[3] = {0};
+    static float x[3] = {0, 0, 0};
+    static float y[3] = {0, 0, 0};
+
+    //setCoef(ACoeff, BCoeff);
 
     //Input data of the filter
     x[0] = *angle;
@@ -441,7 +465,7 @@ void lowPassFilter(float *angle)
     y[0] = ACoeff[0]*y[1] + ACoeff[1]*y[2] +
            BCoeff[0]*x[0] + BCoeff[1]*x[1] + BCoeff[2]*x[2];
     //Storing data
-    for(uint16_t i = 1; i >= 0; i--) 
+    for(int i = 1; i >= 0; i--) 
     {
         x[i+1] = x[i];
         y[i+1] = y[i];
