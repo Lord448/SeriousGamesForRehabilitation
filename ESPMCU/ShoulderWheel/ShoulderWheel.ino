@@ -495,7 +495,7 @@ void getData(float *read) {
         lectures += tmp;
     }
     mean = lectures/numberOfValues;
-    mean -= 360;
+    //mean -= 360;
     *read = ABS(mean);
 }
 

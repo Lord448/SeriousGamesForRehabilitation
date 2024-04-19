@@ -92,7 +92,7 @@
 
 
 //DSP Configurations
-#define ENABLE_FILTER
+//#define ENABLE_FILTER
 //----------------------------------------------------------------------
 //                          ENUMS & STRUCTS
 //----------------------------------------------------------------------
@@ -257,8 +257,6 @@ class MyCallbacks : public BLECharacteristicCallbacks {
 void setup();
 #line 317 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
 void loop();
-#line 410 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
-void setCoef(float *a, float *b);
 #line 588 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
 void battHandler(BattFlags battFlags);
 #line 254 "/home/lord448/Documentos/TEC/Tesis/VideojuegoCRITRepo/ESPMCU/ShoulderWheel/ShoulderWheel.ino"
@@ -338,7 +336,7 @@ void loop()
 
 #ifdef ENABLE_FILTER
     //Data filter
-    //lowPassFilter(&angle);
+    lowPassFilter(&angle);
 #endif
 
 #ifndef TEST
@@ -506,7 +504,7 @@ void getData(float *read) {
         lectures += tmp;
     }
     mean = lectures/numberOfValues;
-    mean -= 360;
+    //mean -= 360;
     *read = ABS(mean);
 }
 
