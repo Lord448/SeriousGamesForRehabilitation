@@ -42,6 +42,9 @@
 //Macro to get the lenght of the touchGPIO array
 #define LIMIT i < (sizeof(touchGPIO)/4)
 
+//Cooldown time
+#define COOLDOWN_TIME 1000 //Milliseconds
+
 // See the following url for generating UUIDs:
 // https://www.uuidgenerator.net/
 
@@ -218,12 +221,17 @@ void setup()
 //----------------------------------------------------------------------
 void loop()
 {
+    static int time = millis();
     needToSend = false;
     morePinsTouched = false;
+
     //GPIO Read
 	for(uint32_t i = 0; LIMIT; i++) {
+        //Fetching pressions
         if(digitalRead(touchGPIO[i]) == 1) {
+            //A touch pad has been pressed
             if(morePinsTouched || lastPin == i) {
+                //Discard the event
                 touchedPin = 0xFF;
                 needToSend = false;
                 break;
@@ -235,18 +243,25 @@ void loop()
     }
 
     //Sending information
-    if(needToSend && touchedPin != 0xFF) { //The pin is touched and its a diferent pin
-            sprintf(Buffer, "T:%d\n", touchedPin); //Bulding the string
-#ifndef TEST
-            if(deviceConnected && bleRXFlags.doTransmit)
+#if defined(COOLDOWN_TIME) && COOLDOWN_TIME != 0
+    if(needToSend && touchedPin != 0xFF && (millis()-time) > COOLDOWN_TIME) { 
 #else
-            if(deviceConnected)
+    if(needToSend && touchedPin != 0xFF) {
 #endif
-            {
-                sendStringData(Buffer, pTxCharacteristic); //Sending to the GATT Client
-            }
-            Serial.println(Buffer);
-            lastPin = touchedPin;
+        Serial.printf("Touch send: T%d\n", touchedPin);
+        //The pin is touched, its a diferent pin and cooldown has passed
+        sprintf(Buffer, "T:%d\n", touchedPin); //Bulding the string
+#ifndef TEST
+        if(deviceConnected && bleRXFlags.doTransmit)
+#else
+        if(deviceConnected)
+#endif
+        {
+            sendStringData(Buffer, pTxCharacteristic); //Sending to the GATT Client
+        }
+        Serial.println(Buffer);
+        lastPin = touchedPin;
+        time = millis();
     }
     
     
