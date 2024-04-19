@@ -43,7 +43,7 @@
 #define LIMIT i < (sizeof(touchGPIO)/4)
 
 //Cooldown time
-#define COOLDOWN_TIME 1000 //Milliseconds
+#define COOLDOWN_TIME 500 //Milliseconds
 
 // See the following url for generating UUIDs:
 // https://www.uuidgenerator.net/
