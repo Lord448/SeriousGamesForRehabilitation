@@ -244,10 +244,11 @@ void loop()
 
     //Sending information
 #if defined(COOLDOWN_TIME) && COOLDOWN_TIME != 0
-    if(needToSend && touchedPin != 0xFF && (millis()-time) > COOLDOWN_TIME) { 
+    if(needToSend && touchedPin != 0xFF && (millis()-time) > COOLDOWN_TIME)
 #else
-    if(needToSend && touchedPin != 0xFF) {
+    if(needToSend && touchedPin != 0xFF) 
 #endif
+    {
         Serial.printf("Touch send: T%d\n", touchedPin);
         //The pin is touched, its a diferent pin and cooldown has passed
         sprintf(Buffer, "T:%d\n", touchedPin); //Bulding the string
